@@ -7,7 +7,7 @@ curl -XPOST "https://api.transfernow.net/v1/transfers" \
         "toEmails": ["my.contact@provider.com", "my.other.contact@provider.com"],
         "files": [{
           "name": "bk.tar.gz",
-          "size": 100000
+          "size": 100000000
         }],
         "message": "A brillant transfer content, thank you",
         "subject": "BK",
