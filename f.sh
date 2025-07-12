@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Specify the directory you want to search
+# Define the directory to search
 directory=""
 
-# Loop through all files and directories
-for item in "$directory"/*; do
-    if [ -e "$item" ]; then
-        echo "$item"
-    fi
+# Loop through each file found by the find command
+for file in $(find "$directory" -type f); do
+    echo "Processing file: $file"
+    # You can add your processing commands here
 done
