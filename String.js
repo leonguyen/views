@@ -1,12 +1,8 @@
 class String {
     /**
-
      * Slugify a given string to make it URL-friendly.
-
      * @param {string} text - The input string to slugify.
-
      * @returns {string} - The slugified string.
-
      */
     slugify(text) {
         text = text.toLowerCase();
@@ -16,15 +12,10 @@ class String {
         return text;
     }
     /**
-
      * Format a given string to be used as a filename.
-
      * Capitalizes each word and removes special characters.
-
      * @param {string} text - The input string.
-
      * @returns {string} - The formatted file name.
-
      */
     formatFileName(text) {
         const words = text.trim().split(/\s+/);
@@ -34,5 +25,10 @@ class String {
             return cleanedWord.charAt(0).toUpperCase() + cleanedWord.slice(1).toLowerCase();
         });
         return processedWords.join('');
+    }
+    getFirstCharacters(str) {
+        return str.trim().split(/\s+/) // Split by whitespace
+            .map(word => word[0]) // Take first character of each word
+            .join(''); // Combine into a single string
     }
 }
