@@ -31,4 +31,7 @@ class String {
             .map(word => word[0]) // Take first character of each word
             .join(''); // Combine into a single string
     }
+    replace(str, search, replace){
+        return v.replaceAll(str, search, replace);
+    }
 }
