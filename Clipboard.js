@@ -11,7 +11,7 @@
                 const resultInput = document.getElementById(settings.outputText); // Use the configurable outputText
                 resultInput.select();
                 const cb = resultInput.value;
-                cb = LocalStorage.last();
+                cb = LocalStorage.last("clipboard");
                 document.execCommand("copy");
                 resultInput.setSelectionRange(0, 99999); // For mobile
                 navigator.clipboard.writeText(cb).then(() => {

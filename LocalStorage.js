@@ -9,7 +9,9 @@ class LocalStorage {
     static get(key){
         return getAll();
     }
-    getAll() {
+    getAll(key = "") {
+        if(key && key.length > 0)
+            this.key = key;
         return JSON.parse(localStorage.getItem(this.key)) || [];
     }
     saveAll(dataArray) {
@@ -31,12 +33,12 @@ class LocalStorage {
         return list.length > 0 ? list[0] : null; // Return first item or null if empty
     }
     // New Function: Get Last Item
-    last() {
-        const list = this.getAll();
+    last(key = "") {
+        const list = this.getAll(key);
         return list.length > 0 ? list[list.length - 1] : null; // Return last item or null if empty
     }
-    static last(){
-        return this.last();
+    static last(key = "" ){
+        return this.last(key);
     }
     // New Function: Get Item at Specific Index
     at(index) {
