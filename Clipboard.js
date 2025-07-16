@@ -10,7 +10,7 @@
             $element.on('click', function() {
                 const resultInput = document.getElementById(settings.outputText); // Use the configurable outputText
                 resultInput.select();
-                const cb = LocalStorage.last("clipboard");
+                const cb = JSON.parse(localStorage.getItem("clipboard"));
                 cb = resultInput.value;
                 document.execCommand("copy");
                 resultInput.setSelectionRange(0, 99999); // For mobile

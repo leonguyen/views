@@ -5,7 +5,7 @@ class LocalStorage {
     static set(key = "", dataArray){
         if (key && key.length > 0)
             this.key = key;
-        localStorage.setItem(this.key, dataArray);
+        this.saveAll(this.key, dataArray);
     }
     static get(key = ""){
         if (key && key.length > 0)
@@ -17,7 +17,7 @@ class LocalStorage {
             this.key = key;
         return JSON.parse(localStorage.getItem(this.key)) || [];
     }
-    saveAll(dataArray) {
+    saveAll(key = "", dataArray = "") {
         localStorage.setItem(this.key, JSON.stringify(dataArray));
     }
     add(item) {
