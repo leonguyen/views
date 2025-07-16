@@ -35,6 +35,9 @@ class LocalStorage {
         const list = this.getAll();
         return list.length > 0 ? list[list.length - 1] : null; // Return last item or null if empty
     }
+    static last(){
+        return this.last();
+    }
     // New Function: Get Item at Specific Index
     at(index) {
         const list = this.getAll();

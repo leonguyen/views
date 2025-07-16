@@ -10,9 +10,11 @@
             $element.on('click', function() {
                 const resultInput = document.getElementById(settings.outputText); // Use the configurable outputText
                 resultInput.select();
+                const cb = resultInput.value;
+                cb = LocalStorage.last();
                 document.execCommand("copy");
                 resultInput.setSelectionRange(0, 99999); // For mobile
-                navigator.clipboard.writeText(resultInput.value).then(() => {
+                navigator.clipboard.writeText(cb).then(() => {
                     //alert("Copied to clipboard!");
                 }).catch(err => {
                     alert("Failed to copy.");
