@@ -6,6 +6,9 @@ class LocalStorage {
         this.key = key;
         localStorage.setItem(this.key, dataArray);
     }
+    static get(key){
+        return getAll();
+    }
     getAll() {
         return JSON.parse(localStorage.getItem(this.key)) || [];
     }
