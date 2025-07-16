@@ -18,12 +18,14 @@ class LocalStorage {
         return JSON.parse(localStorage.getItem(this.key)) || [];
     }
     saveAll(key = "", dataArray = "") {
+        if (key && key.length > 0)
+            this.key = key;
         localStorage.setItem(this.key, JSON.stringify(dataArray));
     }
     add(item) {
         const list = this.getAll();
         list.push(item);
-        this.saveAll(list);
+        this.saveAll(this.key, list);
     }
     static add(item){
         this.add(item);
