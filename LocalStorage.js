@@ -2,7 +2,7 @@ class LocalStorage {
     constructor(key) {
         this.key = key;
     }
-    static set(key = "", dataArray){
+    static set(key = "", dataArray = ""){
         if (key && key.length > 0)
             this.key = key;
         this.saveAll(this.key, dataArray);
