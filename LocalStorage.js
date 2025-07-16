@@ -7,7 +7,9 @@ class LocalStorage {
             this.key = key;
         localStorage.setItem(this.key, dataArray);
     }
-    static get(key){
+    static get(key = ""){
+        if (key && key.length > 0)
+            this.key = key;
         return getAll(key);
     }
     getAll(key = "") {
@@ -22,6 +24,9 @@ class LocalStorage {
         const list = this.getAll();
         list.push(item);
         this.saveAll(list);
+    }
+    static add(item){
+        this.add(item);
     }
     remove(index) {
         const list = this.getAll();
