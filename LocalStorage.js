@@ -2,12 +2,13 @@ class LocalStorage {
     constructor(key) {
         this.key = key;
     }
-    static set(key, dataArray){
-        this.key = key;
+    static set(key = "", dataArray){
+        if (key && key.length > 0)
+            this.key = key;
         localStorage.setItem(this.key, dataArray);
     }
     static get(key){
-        return getAll();
+        return getAll(key);
     }
     getAll(key = "") {
         if(key && key.length > 0)
