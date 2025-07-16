@@ -13,7 +13,7 @@
                 document.execCommand("copy");
                 resultInput.setSelectionRange(0, 99999); // For mobile
                 const cb = JSON.parse(localStorage.getItem("clipboard"));
-                const cb = resultInput.value;
+                cb = resultInput.value;
                 navigator.clipboard.writeText(cb).then(() => {
                     //alert("Copied to clipboard!");
                 }).catch(err => {
