@@ -108,10 +108,10 @@ class Html {
         return `${opening}${childrenHtml}</${this.name}>`;
     }
     renderChild(child) {
-        if (typeof child === 'string') return HtmlElement.escapeHtml(child);
+        if (typeof child === 'string') return Html.escapeHtml(child);
         if (child.type === 'html') return child.value;
-        if (child.type === 'text') return HtmlElement.escapeHtml(child.value);
-        if (child instanceof HtmlElement) return child.toHtml();
+        if (child.type === 'text') return Html.escapeHtml(child.value);
+        if (child instanceof Html) return child.toHtml();
         return '';
     }
     // Helpers d’échappement
@@ -119,24 +119,24 @@ class Html {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
     static escapeAttr(str) {
-        return HtmlElement.escapeHtml(str).replace(/"/g, '&quot;');
+        return Html.escapeHtml(str).replace(/"/g, '&quot;');
     }
     // Alias pour conversion en chaîne
     toString() {
         return this.toHtml();
     }
 }
-class Div extends HtmlElement {
+class Div extends Html {
     constructor(attributes = {}, children = []) {
         super('div', attributes, children);
     }
 }
-class Span extends HtmlElement {
+class Span extends Html {
     constructor(attributes = {}, children = []) {
         super('span', attributes, children);
     }
 }
-class Input extends HtmlElement {
+class Input extends Html {
     constructor(type, attributes = {}) {
         super('input', {
             type,
@@ -148,7 +148,7 @@ class Input extends HtmlElement {
         return `<input ${attrs} />`;
     }
 }
-class Button extends HtmlElement {
+class Button extends Html {
     constructor(attributes = {}, children = []) {
         super('button', attributes, children);
     }
