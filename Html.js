@@ -133,24 +133,121 @@ HtmlElement.prototype.addBs = function(...classes) {
   return this;
 };
 //Bootstrap 5
-class BsButton extends Button {
+class BsContainer extends Div {
   constructor(attrs = {}, children = []) {
-    // Ensure at least 'btn' in class, plus any variant
-    super({ ...attrs }, children);
-    this.addClass('btn');
-    if (attrs.variant) {
-      this.addClass('btn-' + attrs.variant);
-    }
+    super(attrs, children);
+    this.addClass('container');
+    if (attrs.fluid) this.addClass('container-fluid');
   }
 }
-// ALERT
+
+class BsRow extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('row');
+  }
+}
+
+class BsCol extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('col');
+    if (attrs.size) this.addClass('col-' + attrs.size);
+    if (attrs.breakpoint && attrs.size)
+      this.addClass(`col-${attrs.breakpoint}-${attrs.size}`);
+  }
+}
+
+class BsFlex extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('d-flex');
+    if (attrs.justify) this.addClass('justify-content-' + attrs.justify);
+    if (attrs.align) this.addClass('align-items-' + attrs.align);
+  }
+}
+class BsTable extends Table {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('table');
+    if (attrs.variant) this.addClass('table-' + attrs.variant); // striped, dark, etc.
+    if (attrs.hover) this.addClass('table-hover');
+    if (attrs.bordered) this.addClass('table-bordered');
+    if (attrs.sm) this.addClass('table-sm');
+  }
+}
+
+class BsImage extends Img {
+  constructor(attrs = {}) {
+    super(attrs);
+    if (attrs.fluid) this.addClass('img-fluid');
+    if (attrs.thumbnail) this.addClass('img-thumbnail');
+    if (attrs.rounded) this.addClass('rounded');
+  }
+}
+
+class BsLeadText extends P {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('lead');
+  }
+}
+class BsForm extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('form', attrs, children);
+  }
+}
+
+class BsFormGroup extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('mb-3');
+  }
+}
+
+class BsInput extends Input {
+  constructor(type = 'text', attrs = {}) {
+    super(type, { ...attrs, class: 'form-control' });
+  }
+}
+
+class BsLabel extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('label', attrs, children);
+  }
+}
+
+class BsSelect extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('select', { ...attrs, class: 'form-select' }, children);
+  }
+}
+
+class BsCheckbox extends Input {
+  constructor(attrs = {}) {
+    super('checkbox', { ...attrs, class: 'form-check-input' });
+  }
+}
+
+class BsRadio extends Input {
+  constructor(attrs = {}) {
+    super('radio', { ...attrs, class: 'form-check-input' });
+  }
+}
+class BsButton extends Button {
+  constructor(attrs = {}, children = []) {
+    super({ ...attrs }, children);
+    this.addClass('btn');
+    if (attrs.variant) this.addClass('btn-' + attrs.variant);
+    if (attrs.size) this.addClass('btn-' + attrs.size); // lg, sm
+  }
+}
+
 class BsAlert extends Div {
   constructor(attrs = {}, children = []) {
     super(attrs, children);
     this.addClass('alert');
-    if (attrs.variant) {
-      this.addClass('alert-' + attrs.variant);
-    }
+    if (attrs.variant) this.addClass('alert-' + attrs.variant);
     if (attrs.dismissible) {
       this.addClass('alert-dismissible');
       this.addChild(new Button({
@@ -160,26 +257,19 @@ class BsAlert extends Div {
   }
 }
 
-// BADGE
 class BsBadge extends Span {
   constructor(attrs = {}, children = []) {
     super(attrs, children);
     this.addClass('badge');
     if (attrs.variant) this.addClass('bg-' + attrs.variant);
+    if (attrs.pill) this.addClass('rounded-pill');
   }
 }
 
-// CARD FAMILY
 class BsCard extends Div {
   constructor(attrs = {}, children = []) {
     super(attrs, children);
     this.addClass('card');
-  }
-}
-class BsCardBody extends Div {
-  constructor(attrs = {}, children = []) {
-    super(attrs, children);
-    this.addClass('card-body');
   }
 }
 class BsCardHeader extends Div {
@@ -188,36 +278,47 @@ class BsCardHeader extends Div {
     this.addClass('card-header');
   }
 }
-
-// NAVBAR (example)
-class BsNavbar extends Nav {
+class BsCardBody extends Div {
   constructor(attrs = {}, children = []) {
     super(attrs, children);
-    this.addClass('navbar');
-    if (attrs.expand) this.addClass('navbar-expand-' + attrs.expand);
-    if (attrs.bg) this.addClass('bg-' + attrs.bg);
+    this.addClass('card-body');
   }
 }
 
-// ACCORDION
+class BsNavbar extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('nav', attrs, children);
+    this.addClass('navbar');
+    if (attrs.expand) this.addClass('navbar-expand-' + attrs.expand);
+    if (attrs.bg) this.addClass('bg-' + attrs.bg);
+    if (attrs.variant) this.addClass('navbar-' + attrs.variant); // light/dark
+  }
+}
+
 class BsAccordion extends Div {
   constructor(attrs = {}, children = []) {
     super(attrs, children);
     this.addClass('accordion');
   }
 }
+HtmlElement.prototype.addBs = function(...classes) {
+  classes.flat().forEach(cls => this.addClass(cls));
+  return this;
+};
+// Usage: el.addBs('mb-3', 'd-flex', 'justify-content-center')
+
 
 // --- USAGE EXAMPLE (Builder Pattern) ---
-/*const img = new Img({ src: 'image.jpg', alt: 'desc' });
+/*
+const img = new Img({ src: 'image.jpg', alt: 'desc' });
 // document.body.innerHTML = img.toHtml();
 */
-/*const alert = new BsAlert({ variant: 'danger', dismissible: true }, [
-  new HtmlText('Error! Something went wrong.')
-]);
-document.body.innerHTML = alert.toHtml();
-
-const card = new BsCard({}, [
+/*const card = new BsCard({}, [
   new BsCardHeader({}, [new HtmlText('Header')]),
-  new BsCardBody({}, [new HtmlText('Body content')])
+  new BsCardBody({}, [new HtmlText('Body content here')])
+]);
+
+const alert = new BsAlert({ variant: 'warning', dismissible: true }, [
+  new HtmlText('Be careful!')
 ]);
 */
