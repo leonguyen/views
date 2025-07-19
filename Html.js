@@ -128,7 +128,96 @@ class FormBuilder {
     document.getElementById(targetId).innerHTML = this.form.toHtml();
   }
 }
+HtmlElement.prototype.addBs = function(...classes) {
+  classes.flat().forEach(cls => this.addClass(cls));
+  return this;
+};
+//Bootstrap 5
+class BsButton extends Button {
+  constructor(attrs = {}, children = []) {
+    // Ensure at least 'btn' in class, plus any variant
+    super({ ...attrs }, children);
+    this.addClass('btn');
+    if (attrs.variant) {
+      this.addClass('btn-' + attrs.variant);
+    }
+  }
+}
+// ALERT
+class BsAlert extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('alert');
+    if (attrs.variant) {
+      this.addClass('alert-' + attrs.variant);
+    }
+    if (attrs.dismissible) {
+      this.addClass('alert-dismissible');
+      this.addChild(new Button({
+        type: 'button', class: 'btn-close', 'data-bs-dismiss': 'alert', 'aria-label': 'Close'
+      }));
+    }
+  }
+}
+
+// BADGE
+class BsBadge extends Span {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('badge');
+    if (attrs.variant) this.addClass('bg-' + attrs.variant);
+  }
+}
+
+// CARD FAMILY
+class BsCard extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('card');
+  }
+}
+class BsCardBody extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('card-body');
+  }
+}
+class BsCardHeader extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('card-header');
+  }
+}
+
+// NAVBAR (example)
+class BsNavbar extends Nav {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('navbar');
+    if (attrs.expand) this.addClass('navbar-expand-' + attrs.expand);
+    if (attrs.bg) this.addClass('bg-' + attrs.bg);
+  }
+}
+
+// ACCORDION
+class BsAccordion extends Div {
+  constructor(attrs = {}, children = []) {
+    super(attrs, children);
+    this.addClass('accordion');
+  }
+}
 
 // --- USAGE EXAMPLE (Builder Pattern) ---
-// const img = new Img({ src: 'image.jpg', alt: 'desc' });
+/*const img = new Img({ src: 'image.jpg', alt: 'desc' });
 // document.body.innerHTML = img.toHtml();
+*/
+/*const alert = new BsAlert({ variant: 'danger', dismissible: true }, [
+  new HtmlText('Error! Something went wrong.')
+]);
+document.body.innerHTML = alert.toHtml();
+
+const card = new BsCard({}, [
+  new BsCardHeader({}, [new HtmlText('Header')]),
+  new BsCardBody({}, [new HtmlText('Body content')])
+]);
+*/
