@@ -54,4 +54,4 @@ class LocalStorage {
         return index >= 0 && index < list.length ? list[index] : null; // Return item at index or null if out of bounds
     }
 }
-export default LocalStorage;
+window.LocalStorage = LocalStorage; 
