@@ -1,4 +1,3 @@
-// ===== Html.js =====
 // Composite Pattern Base Class
 class HtmlElement {
   constructor(tag = null, attrs = {}, children = []) {
@@ -72,7 +71,7 @@ class HtmlElement {
     return this;
   }
 
-  // Inline style (use sparingly, prefer Bootstrap classes)
+  // Inline style
   setStyle(key, value) {
     const styleObj = this._parseStyle(this.attrs.style || '');
     styleObj[key] = value;
@@ -129,41 +128,6 @@ class HtmlElement {
     return `${markupOpen}${this.children.map(c => c.toHtml()).join('')}</${this.tag}>`;
   }
 
-  // New method to convert to a DOM element
-  toHtmlElement() {
-    if (!this.tag) {
-        // If it's a wrapper for children, create a document fragment or span
-        const fragment = document.createDocumentFragment();
-        this.children.forEach(child => {
-            const el = child.toHtmlElement();
-            if (el) fragment.appendChild(el);
-        });
-        return fragment;
-    }
-
-    const element = document.createElement(this.tag);
-
-    for (const key in this.attrs) {
-      if (this.attrs.hasOwnProperty(key)) {
-        const value = this.attrs[key];
-        if (value === true) {
-          element.setAttribute(key, '');
-        } else if (value !== false && value !== null && value !== undefined) {
-          element.setAttribute(key, value);
-        }
-      }
-    }
-
-    this.children.forEach(child => {
-      const childElement = child.toHtmlElement();
-      if (childElement) {
-        element.appendChild(childElement);
-      }
-    });
-
-    return element;
-  }
-
   toString() {
     return this.toHtml();
   }
@@ -192,10 +156,6 @@ class HtmlText {
   toHtml() {
     return HtmlElement.escapeHtml(this.text);
   }
-
-  toHtmlElement() {
-    return document.createTextNode(this.text);
-  }
 }
 
 // Leaf node for raw HTML
@@ -207,56 +167,9 @@ class HtmlRaw {
   toHtml() {
     return this.html;
   }
-
-  toHtmlElement() {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = this.html;
-    // If the raw HTML is a single element, return that element.
-    // Otherwise, return a document fragment containing all parsed elements.
-    if (tempDiv.children.length === 1) {
-        return tempDiv.firstElementChild;
-    } else {
-        const fragment = document.createDocumentFragment();
-        while (tempDiv.firstChild) {
-            fragment.appendChild(tempDiv.firstChild);
-        }
-        return fragment;
-    }
-  }
 }
 
 // Specialized Elements (Builder pattern usage)
-class H1 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h1', attrs, children);
-  }
-}
-class H2 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h2', attrs, children);
-  }
-}
-class H3 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h3', attrs, children);
-  }
-}
-class H4 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h4', attrs, children);
-  }
-}
-class H5 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h5', attrs, children);
-  }
-}
-class H6 extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('h6', attrs, children);
-  }
-}
-
 class Div extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('div', attrs, children);
@@ -269,21 +182,9 @@ class Span extends HtmlElement {
   }
 }
 
-class Form extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('form', attrs, children);
-  }
-}
-
 class Input extends HtmlElement {
   constructor(type, attrs = {}) {
     super('input', { type, ...attrs });
-  }
-}
-
-class Textarea extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('textarea', attrs, children);
   }
 }
 
@@ -329,27 +230,9 @@ class Table extends HtmlElement {
   }
 }
 
-class Thead extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('thead', attrs, children);
-  }
-}
-
-class Tbody extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('tbody', attrs, children);
-  }
-}
-
 class Tr extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('tr', attrs, children);
-  }
-}
-
-class Th extends HtmlElement {
-  constructor(attrs = {}, children = []) {
-    super('th', attrs, children);
   }
 }
 
@@ -359,103 +242,14 @@ class Td extends HtmlElement {
   }
 }
 
-// === New Bootstrap 5 Component Classes / Helpers ===
-
-/**
- * Represents a Bootstrap 5 Card component.
- */
-class Card extends Div {
-  constructor(attrs = {}, children = []) {
-    super({ class: 'card', ...attrs }, children);
-  }
-
-  addHeader(headerContent) {
-    const header = new Div({ class: 'card-header' }).addRawHtml(headerContent);
-    this.addChild(header);
-    return this;
-  }
-
-  addBody(bodyContent) {
-    const body = new Div({ class: 'card-body' });
-    if (typeof bodyContent === 'string') {
-      body.addRawHtml(bodyContent);
-    } else if (bodyContent instanceof HtmlElement) {
-      body.addChild(bodyContent);
-    } else if (Array.isArray(bodyContent)) {
-      bodyContent.forEach(item => {
-        if (typeof item === 'string') body.addRawHtml(item);
-        else if (item instanceof HtmlElement) body.addChild(item);
-      });
-    }
-    this.addChild(body);
-    return this;
-  }
-
-  addFooter(footerContent) {
-    const footer = new Div({ class: 'card-footer' }).addRawHtml(footerContent);
-    this.addChild(footer);
-    return this;
-  }
-}
-
-/**
- * Represents a Bootstrap 5 Badge component.
- */
-class Badge extends Span {
-  constructor(text, type = 'primary', attrs = {}) {
-    super({ class: `badge bg-${type}`, ...attrs });
-    this.addText(text);
-  }
-}
-
-/**
- * Represents a Bootstrap 5 Spinner component.
- */
-class Spinner extends Div {
-  constructor(type = 'border', color = 'primary', srText = 'Loading...', attrs = {}) {
-    super({ class: `spinner-${type} text-${color}`, role: 'status', ...attrs });
-    this.addChild(new Span({ class: 'visually-hidden' }).addText(srText));
-  }
-}
-
-/**
- * Builds a Bootstrap 5 List Group.
- * @param {Array<object>} items - Array of list item objects, e.g., [{ text: 'Item 1', href: '#', active: true }]
- * @param {string} type - 'ul' for <ul> based list-group, 'div' for <div> based list-group
- * @param {object} attrs - Additional attributes for the main list group container.
- * @returns {HtmlElement} The list group HtmlElement.
- */
-function buildListGroup(items, type = 'ul', attrs = {}) {
-  const listContainer = type === 'ul' ? new Ul({ class: 'list-group', ...attrs }) : new Div({ class: 'list-group', ...attrs });
-
-  items.forEach(item => {
-    const itemAttrs = { class: 'list-group-item' };
-    if (item.active) itemAttrs.class += ' active';
-    if (item.disabled) itemAttrs.class += ' disabled';
-
-    let listItem;
-    if (item.href) {
-      listItem = new A({ ...itemAttrs, class: itemAttrs.class + ' list-group-item-action', href: item.href });
-    } else {
-      listItem = new Li(itemAttrs);
-    }
-    listItem.addText(item.text);
-    listContainer.addChild(listItem);
-  });
-  return listContainer;
-}
-
-// Export new components
+// Optionally, export
 export {
   HtmlElement,
   HtmlText,
   HtmlRaw,
-  H1, H2, H3, H4, H5, H6,
   Div,
   Span,
-  Form,
   Input,
-  Textarea,
   Button,
   P,
   Img,
@@ -463,79 +257,6 @@ export {
   Ul,
   Li,
   Table,
-  Thead,
-  Tbody,
-  Th,
   Tr,
-  Td,
-  // New Bootstrap 5 specific exports
-  Card,
-  Badge,
-  Spinner,
-  buildListGroup
+  Td
 };
-
-
-// ===== TableBuilder.js =====
-export function buildTable(headers, rows) {
-  const thead = new Thead().addChild(
-    new Tr().addChild(...headers.map(h => new Th().addText(h)))
-  );
-  const tbody = new Tbody();
-  rows.forEach(row => {
-    tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell))));
-  });
-  return new Table({ class: 'table table-bordered' }).addChild(thead).addChild(tbody).toHtml();
-}
-
-// ===== AlertBuilder.js =====
-export function buildAlert(type, message) {
-  return new Div({ class: `alert alert-${type}`, role: 'alert' })
-    .addText(message)
-    .toHtml();
-}
-
-// ===== FormBuilder.js =====
-export function buildForm(fields, submitText = 'Submit') {
-  const form = new Form({ class: 'form' });
-
-  fields.forEach(field => {
-    const group = new Div({ class: 'mb-3' });
-    let inputElement;
-    if (field.type === 'textarea') {
-      inputElement = new Textarea({
-        class: 'form-control',
-        id: field.id,
-        placeholder: field.placeholder || ''
-      });
-    } else {
-      inputElement = new Input(field.type, {
-        class: 'form-control',
-        id: field.id,
-        placeholder: field.placeholder || ''
-      });
-    }
-    group.addChild(inputElement);
-    form.addChild(group);
-  });
-
-  form.addChild(new Button({ type: 'submit', class: 'btn btn-primary' }).addText(submitText));
-  return form.toHtml();
-}
-
-// ===== ModalBuilder.js =====
-export function buildModal(id, title, body) {
-  return new Div({ class: 'modal fade', id: id, tabindex: '-1' })
-    .addChild(
-      new Div({ class: 'modal-dialog' })
-        .addChild(
-          new Div({ class: 'modal-content' })
-            .addChild(new Div({ class: 'modal-header' })
-              .addChild(new Div({ class: 'modal-title h5' }).addText(title))
-              .addChild(new Button({ type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' })))
-            .addChild(new Div({ class: 'modal-body' }).addChild(new Div().addText(body)))
-            .addChild(new Div({ class: 'modal-footer' })
-              .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close')))
-        )
-    ).toHtml();
-}
