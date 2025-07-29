@@ -445,39 +445,42 @@ function buildListGroup(items, type = 'ul', attrs = {}) {
   return listContainer;
 }
 
-// Export new components
-export {
-  HtmlElement,
-  HtmlText,
-  HtmlRaw,
-  H1, H2, H3, H4, H5, H6,
-  Div,
-  Span,
-  Form,
-  Input,
-  Textarea,
-  Button,
-  P,
-  Img,
-  A,
-  Ul,
-  Li,
-  Table,
-  Thead,
-  Tbody,
-  Th,
-  Tr,
-  Td,
-  // New Bootstrap 5 specific exports
-  Card,
-  Badge,
-  Spinner,
-  buildListGroup
-};
+// Assign to global scope for classic JS
+window.HtmlElement = HtmlElement;
+window.HtmlText = HtmlText;
+window.HtmlRaw = HtmlRaw;
+window.H1 = H1;
+window.H2 = H2;
+window.H3 = H3;
+window.H4 = H4;
+window.H5 = H5;
+window.H6 = H6;
+window.Div = Div;
+window.Span = Span;
+window.Form = Form;
+window.Input = Input;
+window.Textarea = Textarea;
+window.Button = Button;
+window.P = P;
+window.Img = Img;
+window.A = A;
+window.Ul = Ul;
+window.Li = Li;
+window.Table = Table;
+window.Thead = Thead;
+window.Tbody = Tbody;
+window.Th = Th;
+window.Tr = Tr;
+window.Td = Td;
+// New Bootstrap 5 specific exports
+window.Card = Card;
+window.Badge = Badge;
+window.Spinner = Spinner;
+window.buildListGroup = buildListGroup;
 
 
 // ===== TableBuilder.js =====
-export function buildTable(headers, rows) {
+window.buildTable = function buildTable(headers, rows) {
   const thead = new Thead().addChild(
     new Tr().addChild(...headers.map(h => new Th().addText(h)))
   );
@@ -486,17 +489,17 @@ export function buildTable(headers, rows) {
     tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell))));
   });
   return new Table({ class: 'table table-bordered' }).addChild(thead).addChild(tbody).toHtml();
-}
+};
 
 // ===== AlertBuilder.js =====
-export function buildAlert(type, message) {
+window.buildAlert = function buildAlert(type, message) {
   return new Div({ class: `alert alert-${type}`, role: 'alert' })
     .addText(message)
     .toHtml();
-}
+};
 
 // ===== FormBuilder.js =====
-export function buildForm(fields, submitText = 'Submit') {
+window.buildForm = function buildForm(fields, submitText = 'Submit') {
   const form = new Form({ class: 'form' });
 
   fields.forEach(field => {
@@ -521,10 +524,10 @@ export function buildForm(fields, submitText = 'Submit') {
 
   form.addChild(new Button({ type: 'submit', class: 'btn btn-primary' }).addText(submitText));
   return form.toHtml();
-}
+};
 
 // ===== ModalBuilder.js =====
-export function buildModal(id, title, body) {
+window.buildModal = function buildModal(id, title, body) {
   return new Div({ class: 'modal fade', id: id, tabindex: '-1' })
     .addChild(
       new Div({ class: 'modal-dialog' })
@@ -538,4 +541,4 @@ export function buildModal(id, title, body) {
               .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close')))
         )
     ).toHtml();
-}
+};
