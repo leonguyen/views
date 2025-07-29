@@ -60,4 +60,8 @@ class LocalStorage {
         return index >= 0 && index < list.length ? list[index] : null; // Return item at index or null if out of bounds
     }
 }
-export default LocalStorage;
+
+// In classic JavaScript, to make it accessible globally, you can attach it to the window object
+// or ensure it's loaded before other scripts that depend on it.
+// For example:
+// window.LocalStorage = LocalStorage;
