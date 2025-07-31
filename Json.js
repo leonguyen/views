@@ -1,4 +1,4 @@
-export class Json {
+class Json {
   constructor(data = {}) {
     this.data = data;
   }
