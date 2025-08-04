@@ -612,3 +612,47 @@ window.buildModal = function buildModal(id, title, body) {
         )
     ).toHtml();
 };
+
+/**
+ * Represents a Dropzone-enhanced Form built with Html.js
+ */
+class DropzoneForm extends Form {
+  /**
+   * 
+   * @param {string} id - DOM ID of the Dropzone
+   * @param {object} dzOptions - Dropzone configuration
+   * @param {Array<HtmlElement>} children - optional inner elements (e.g., fallback input)
+   */
+  constructor(id, dzOptions = {}, children = []) {
+    super({ id, class: "dropzone", action: "/", enctype: "multipart/form-data" }, children);
+
+    this.id = id;
+    this.dzOptions = dzOptions;
+    this.initialized = false;
+  }
+
+  /**
+   * Attach Dropzone.js instance to this form
+   * Should be called after appending to DOM
+   */
+  initDropzone(customInitCallback = null) {
+    Dropzone.autoDiscover = false;
+
+    const dz = new Dropzone(`#${this.id}`, {
+      url: this.dzOptions.url || "/",
+      autoProcessQueue: this.dzOptions.autoProcessQueue ?? false,
+      maxFiles: this.dzOptions.maxFiles ?? null,
+      acceptedFiles: this.dzOptions.acceptedFiles ?? "image/*",
+      addRemoveLinks: true,
+      ...this.dzOptions
+    });
+
+    if (typeof customInitCallback === "function") {
+      customInitCallback(dz);
+    }
+
+    this.initialized = true;
+    return dz;
+  }
+}
+window.DropzoneForm = DropzoneForm;
