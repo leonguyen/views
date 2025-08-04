@@ -109,8 +109,8 @@ class HtmlElement {
     if (!this.tag) return this.children.map(c => c.toHtml()).join('');
 
     const voidTags = new Set([
-      'img','input','br','hr','meta','link','base','area','col','embed','source',
-      'track','wbr'
+      'img', 'input', 'br', 'hr', 'meta', 'link', 'base', 'area', 'col', 'embed', 'source',
+      'track', 'wbr'
     ]);
 
     const attrs = Object.entries(this.attrs)
@@ -132,13 +132,13 @@ class HtmlElement {
   // New method to convert to a DOM element
   toHtmlElement() {
     if (!this.tag) {
-        // If it's a wrapper for children, create a document fragment or span
-        const fragment = document.createDocumentFragment();
-        this.children.forEach(child => {
-            const el = child.toHtmlElement();
-            if (el) fragment.appendChild(el);
-        });
-        return fragment;
+      // If it's a wrapper for children, create a document fragment or span
+      const fragment = document.createDocumentFragment();
+      this.children.forEach(child => {
+        const el = child.toHtmlElement();
+        if (el) fragment.appendChild(el);
+      });
+      return fragment;
     }
 
     const element = document.createElement(this.tag);
@@ -214,13 +214,13 @@ class HtmlRaw {
     // If the raw HTML is a single element, return that element.
     // Otherwise, return a document fragment containing all parsed elements.
     if (tempDiv.children.length === 1) {
-        return tempDiv.firstElementChild;
+      return tempDiv.firstElementChild;
     } else {
-        const fragment = document.createDocumentFragment();
-        while (tempDiv.firstChild) {
-            fragment.appendChild(tempDiv.firstChild);
-        }
-        return fragment;
+      const fragment = document.createDocumentFragment();
+      while (tempDiv.firstChild) {
+        fragment.appendChild(tempDiv.firstChild);
+      }
+      return fragment;
     }
   }
 }
@@ -419,6 +419,72 @@ class Spinner extends Div {
 }
 
 /**
+ * Represents a Bootstrap 5 Accordion container.
+ */
+class Accordion extends Div {
+  constructor(id, attrs = {}) {
+    super({ class: 'accordion', id: id, ...attrs });
+  }
+
+  /**
+   * Adds an item to the accordion.
+   * @param {string} headerContent - The content for the accordion header.
+   * @param {HtmlElement|string} bodyContent - The content for the accordion body.
+   * @param {boolean} expanded - Whether the item should be expanded by default.
+   * @param {string} itemId - Optional unique ID for the item.
+   * @returns {Accordion}
+   */
+  addItem(headerContent, bodyContent, expanded = false, itemId = `item-${Math.random().toString(36).substr(2, 9)}`) {
+    const accordionItem = new AccordionItem(this.getAttr('id'), itemId, headerContent, bodyContent, expanded);
+    this.addChild(accordionItem);
+    return this;
+  }
+}
+
+/**
+ * Represents a single collapsible item within a Bootstrap Accordion.
+ */
+class AccordionItem extends Div {
+  constructor(parentId, itemId, headerContent, bodyContent, expanded) {
+    super({ class: 'accordion-item' });
+    this.addChild(new AccordionHeader(parentId, itemId, headerContent, expanded));
+    this.addChild(new AccordionBody(parentId, itemId, bodyContent, expanded));
+  }
+}
+
+/**
+ * Represents the header of an AccordionItem.
+ */
+class AccordionHeader extends H2 {
+  constructor(parentId, itemId, headerContent, expanded) {
+    super({ class: 'accordion-header' });
+    const buttonAttrs = {
+      class: `accordion-button ${expanded ? '' : 'collapsed'}`,
+      type: 'button',
+      'data-bs-toggle': 'collapse',
+      'data-bs-target': `#collapse-${itemId}`,
+      'aria-expanded': expanded,
+      'aria-controls': `collapse-${itemId}`
+    };
+    this.addChild(new Button(buttonAttrs).addRawHtml(headerContent));
+  }
+}
+
+/**
+ * Represents the collapsible body of an AccordionItem.
+ */
+class AccordionBody extends Div {
+  constructor(parentId, itemId, bodyContent, expanded) {
+    super({
+      id: `collapse-${itemId}`,
+      class: `accordion-collapse collapse ${expanded ? 'show' : ''}`,
+      'data-bs-parent': `#${parentId}`
+    });
+    this.addChild(new Div({ class: 'accordion-body' }).addRawHtml(typeof bodyContent === 'string' ? bodyContent : bodyContent.toHtml()));
+  }
+}
+
+/**
  * Builds a Bootstrap 5 List Group.
  * @param {Array<object>} items - Array of list item objects, e.g., [{ text: 'Item 1', href: '#', active: true }]
  * @param {string} type - 'ul' for <ul> based list-group, 'div' for <div> based list-group
@@ -476,6 +542,10 @@ window.Td = Td;
 window.Card = Card;
 window.Badge = Badge;
 window.Spinner = Spinner;
+window.Accordion = Accordion;
+window.AccordionItem = AccordionItem;
+window.AccordionHeader = AccordionHeader;
+window.AccordionBody = AccordionBody;
 window.buildListGroup = buildListGroup;
 
 
