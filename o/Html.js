@@ -43,11 +43,6 @@ class HtmlElement {
     return this;
   }
 
-  addChildren(children) {
-    children.forEach(child => this.addChild(child));
-    return this;
-  }
-
   addText(text) {
     this.children.push(new HtmlText(text));
     return this;
@@ -151,15 +146,7 @@ class HtmlElement {
     for (const key in this.attrs) {
       if (this.attrs.hasOwnProperty(key)) {
         const value = this.attrs[key];
-        if (key === 'class') {
-          element.className = value;
-        } else if (key === 'id') {
-          element.id = value;
-        } else if (key === 'data' && typeof value === 'object') {
-          for (const [dataKey, dataValue] of Object.entries(value)) {
-            element.dataset[dataKey] = dataValue;
-          }
-        } else if (value === true) {
+        if (value === true) {
           element.setAttribute(key, '');
         } else if (value !== false && value !== null && value !== undefined) {
           element.setAttribute(key, value);
@@ -383,13 +370,7 @@ class Card extends Div {
   }
 
   addHeader(headerContent) {
-    const header = new Div({ class: 'card-header' });
-    if (typeof headerContent === 'string') {
-        const h3 = new H3({ class: "card-title mb-0" }).addText(headerContent);
-        header.addChild(h3);
-    } else {
-        header.addRawHtml(headerContent);
-    }
+    const header = new Div({ class: 'card-header' }).addRawHtml(headerContent);
     this.addChild(header);
     return this;
   }
@@ -637,7 +618,8 @@ window.buildModal = function buildModal(id, title, body) {
  */
 class DropzoneForm extends Form {
   /**
-   * * @param {string} id - DOM ID of the Dropzone
+   * 
+   * @param {string} id - DOM ID of the Dropzone
    * @param {object} dzOptions - Dropzone configuration
    * @param {Array<HtmlElement>} children - optional inner elements (e.g., fallback input)
    */
@@ -655,12 +637,7 @@ class DropzoneForm extends Form {
    */
   initDropzone(customInitCallback = null) {
     Dropzone.autoDiscover = false;
-    
-    // Add the default message to the Dropzone element
-    const messageDiv = new Div({ class: 'dz-message' }).addText('Drag and drop images here or click to upload.').toHtmlElement();
-    const element = this.toHtmlElement();
-    element.appendChild(messageDiv);
-    
+
     const dz = new Dropzone(`#${this.id}`, {
       url: this.dzOptions.url || "/",
       autoProcessQueue: this.dzOptions.autoProcessQueue ?? false,
