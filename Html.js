@@ -679,3 +679,50 @@ class DropzoneForm extends Form {
   }
 }
 window.DropzoneForm = DropzoneForm;
+
+/**
+ * Creates and manages a progress bar using the BProgress library.
+ * This class is a wrapper around the bprogress functionality.
+ */
+class ProgressBar extends Div {
+  constructor(attrs = {}) {
+    super({ class: 'progress', ...attrs });
+    this.bar = new Div({
+      class: 'progress-bar progress-bar-striped progress-bar-animated',
+      role: 'progressbar',
+      'aria-valuenow': 0,
+      'aria-valuemin': 0,
+      'aria-valuemax': 100,
+      style: 'width: 0%'
+    });
+    this.addChild(this.bar);
+  }
+  
+  /**
+   * Updates the progress bar to a new value.
+   * @param {number} value - The new progress value (0-100).
+   */
+  update(value) {
+    const clampedValue = Math.max(0, Math.min(100, value));
+    this.bar.setAttr('aria-valuenow', clampedValue);
+    this.bar.setStyle('width', `${clampedValue}%`);
+  }
+  
+  /**
+   * Hides the progress bar.
+   */
+  hide() {
+    this.removeClass('show');
+    this.addClass('hide');
+    this.update(0);
+  }
+  
+  /**
+   * Shows the progress bar.
+   */
+  show() {
+    this.removeClass('hide');
+    this.addClass('show');
+  }
+}
+window.ProgressBar = ProgressBar;
