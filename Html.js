@@ -679,22 +679,7 @@ class DropzoneForm extends Form {
   }
 }
 window.DropzoneForm = DropzoneForm;
-class DropzoneForm extends HtmlElement {
-  constructor(id, options) {
-    super('form', {
-      id: id,
-      class: 'dropzone',
-      action: '#',
-    });
-    this.options = options;
-    this.addChild(new Div({ class: 'dz-message' }).addText('Drag & Drop images here or click to upload'));
-  }
-  
-  initDropzone(id) {
-    Dropzone.autoDiscover = false;
-    return new Dropzone(`#${id}`, this.options);
-  }
-}
+
 /**
  * Creates and manages a progress bar using the BProgress library.
  * This class is a wrapper around the bprogress functionality.
