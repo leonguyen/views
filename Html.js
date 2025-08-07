@@ -567,6 +567,30 @@ window.AccordionHeader = AccordionHeader;
 window.AccordionBody = AccordionBody;
 window.buildListGroup = buildListGroup;
 
+// A simple utility for creating HTML elements.
+// This is intentionally basic to avoid conflicts with external libraries.
+function createElement(tag, attrs = {}, children = []) {
+  const el = document.createElement(tag);
+
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'class') {
+      el.className = value;
+    } else {
+      el.setAttribute(key, value);
+    }
+  }
+
+  children.forEach(child => {
+    if (typeof child === 'string') {
+      el.appendChild(document.createTextNode(child));
+    } else if (child instanceof Node) {
+      el.appendChild(child);
+    }
+  });
+
+  return el;
+}
+window.createElement = createElement;
 
 // ===== TableBuilder.js =====
 window.buildTable = function buildTable(headers, rows) {
