@@ -750,3 +750,45 @@ class ProgressBar extends Div {
   }
 }
 window.ProgressBar = ProgressBar;
+
+// ===== jsGrid.js Integration =====
+/**
+ * Represents a jsGrid table. The grid will be initialized on a div with the
+ * specified ID after the element has been added to the DOM.
+ */
+class JsGrid extends Div {
+  /**
+   * @param {string} id - The DOM ID for the jsGrid container.
+   * @param {object} options - The configuration object for jsGrid.
+   * @param {object} attrs - Additional attributes for the container div.
+   */
+  constructor(id, options = {}, attrs = {}) {
+    super({ id, ...attrs });
+    this.id = id;
+    this.options = options;
+  }
+
+  /**
+   * Initializes the jsGrid component on the element.
+   * This method must be called after the element is attached to the DOM.
+   * @param {function} [customInitCallback=null] - Optional callback to run after initialization.
+   */
+  init(customInitCallback = null) {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.jsGrid === 'undefined') {
+      console.error('jQuery or jsGrid library not found. Please ensure they are loaded.');
+      return;
+    }
+    
+    const gridElement = jQuery(`#${this.id}`);
+    if (gridElement.length) {
+      gridElement.jsGrid(this.options);
+      
+      if (typeof customInitCallback === 'function') {
+        customInitCallback(gridElement);
+      }
+    } else {
+      console.warn(`JsGrid container with ID "${this.id}" not found in the DOM.`);
+    }
+  }
+}
+window.JsGrid = JsGrid;
