@@ -217,8 +217,7 @@ const contentWrapper = new AdminLTEContentWrapper()
                 </div>
               `))
           )
-      );
-
+      ));
 // --- Footer ---
 const footer = new AdminLTEFooter().addRawHtml(`
   <div class="float-right d-none d-sm-inline">Anything you want</div>
