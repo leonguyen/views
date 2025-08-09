@@ -1,4 +1,4 @@
-// HtmlAdmin5.js
+// HtmlAdmin.js
 // Integrates AdminLTE (v4.x Bootstrap 5) components into Html.js builder classes
 (function(global){
   if (typeof global === 'undefined') global = window;

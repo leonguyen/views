@@ -1,24 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AdminLTE 4 (Bootstrap 5) Html.js Demo</title>
-<script src="Html.js"></script>
-<script src="HtmlAdmin5.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  loadAdminLTE5Deps();
-  const wrapper = new AdminLTEWrapper()
-    .addChild(new AdminLTENavbar().addLeftToggleButton())
-    .addChild(new AdminLTESidebar('<span class=\"brand-text font-weight-light\">AdminLTE 4 + Html.js</span>').addMenu(buildAdminMenu([{text:'Dashboard', icon:'fas fa-tachometer-alt', href:'#', active:true}])))
-    .addChild(new AdminLTEContentWrapper()
-      .addContentHeader('Dashboard')
-      .addMainContent(new AdminLTECard('primary').addHeader('Welcome').addBody('Hello from AdminLTE 4 + Html.js')))
-    .addChild(new AdminLTEFooter().addText('© 2025 Demo'));
-  document.body.appendChild(wrapper.toHtmlElement());
-});
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AdminLTE v4 Dashboard with HtmlAdmin.js</title>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed"></body>
+<body>
+
+  <script src="scripts/Html.js"></script>
+  <script src="scripts/HtmlAdmin.js"></script>
+  <script src="scripts/dashboard.js"></script>
+
+</body>
 </html>

@@ -43,6 +43,11 @@ class HtmlElement {
     return this;
   }
 
+  addChildren(children) {
+    children.forEach(child => this.addChild(child));
+    return this;
+  }
+
   addText(text) {
     this.children.push(new HtmlText(text));
     return this;
@@ -146,7 +151,15 @@ class HtmlElement {
     for (const key in this.attrs) {
       if (this.attrs.hasOwnProperty(key)) {
         const value = this.attrs[key];
-        if (value === true) {
+        if (key === 'class') {
+          element.className = value;
+        } else if (key === 'id') {
+          element.id = value;
+        } else if (key === 'data' && typeof value === 'object') {
+          for (const [dataKey, dataValue] of Object.entries(value)) {
+            element.dataset[dataKey] = dataValue;
+          }
+        } else if (value === true) {
           element.setAttribute(key, '');
         } else if (value !== false && value !== null && value !== undefined) {
           element.setAttribute(key, value);
@@ -370,7 +383,13 @@ class Card extends Div {
   }
 
   addHeader(headerContent) {
-    const header = new Div({ class: 'card-header' }).addRawHtml(headerContent);
+    const header = new Div({ class: 'card-header' });
+    if (typeof headerContent === 'string') {
+        const h3 = new H3({ class: "card-title mb-0" }).addText(headerContent);
+        header.addChild(h3);
+    } else {
+        header.addRawHtml(headerContent);
+    }
     this.addChild(header);
     return this;
   }
@@ -548,6 +567,30 @@ window.AccordionHeader = AccordionHeader;
 window.AccordionBody = AccordionBody;
 window.buildListGroup = buildListGroup;
 
+// A simple utility for creating HTML elements.
+// This is intentionally basic to avoid conflicts with external libraries.
+function createElement(tag, attrs = {}, children = []) {
+  const el = document.createElement(tag);
+
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'class') {
+      el.className = value;
+    } else {
+      el.setAttribute(key, value);
+    }
+  }
+
+  children.forEach(child => {
+    if (typeof child === 'string') {
+      el.appendChild(document.createTextNode(child));
+    } else if (child instanceof Node) {
+      el.appendChild(child);
+    }
+  });
+
+  return el;
+}
+window.createElement = createElement;
 
 // ===== TableBuilder.js =====
 window.buildTable = function buildTable(headers, rows) {
@@ -618,8 +661,7 @@ window.buildModal = function buildModal(id, title, body) {
  */
 class DropzoneForm extends Form {
   /**
-   * 
-   * @param {string} id - DOM ID of the Dropzone
+   * * @param {string} id - DOM ID of the Dropzone
    * @param {object} dzOptions - Dropzone configuration
    * @param {Array<HtmlElement>} children - optional inner elements (e.g., fallback input)
    */
@@ -637,7 +679,12 @@ class DropzoneForm extends Form {
    */
   initDropzone(customInitCallback = null) {
     Dropzone.autoDiscover = false;
-
+    
+    // Add the default message to the Dropzone element
+    const messageDiv = new Div({ class: 'dz-message' }).addText('Drag and drop images here or click to upload.').toHtmlElement();
+    const element = this.toHtmlElement();
+    element.appendChild(messageDiv);
+    
     const dz = new Dropzone(`#${this.id}`, {
       url: this.dzOptions.url || "/",
       autoProcessQueue: this.dzOptions.autoProcessQueue ?? false,
@@ -656,3 +703,92 @@ class DropzoneForm extends Form {
   }
 }
 window.DropzoneForm = DropzoneForm;
+
+/**
+ * Creates and manages a progress bar using the BProgress library.
+ * This class is a wrapper around the bprogress functionality.
+ */
+class ProgressBar extends Div {
+  constructor(attrs = {}) {
+    super({ class: 'progress', ...attrs });
+    this.bar = new Div({
+      class: 'progress-bar progress-bar-striped progress-bar-animated',
+      role: 'progressbar',
+      'aria-valuenow': 0,
+      'aria-valuemin': 0,
+      'aria-valuemax': 100,
+      style: 'width: 0%'
+    });
+    this.addChild(this.bar);
+  }
+  
+  /**
+   * Updates the progress bar to a new value.
+   * @param {number} value - The new progress value (0-100).
+   */
+  update(value) {
+    const clampedValue = Math.max(0, Math.min(100, value));
+    this.bar.setAttr('aria-valuenow', clampedValue);
+    this.bar.setStyle('width', `${clampedValue}%`);
+  }
+  
+  /**
+   * Hides the progress bar.
+   */
+  hide() {
+    this.removeClass('show');
+    this.addClass('hide');
+    this.update(0);
+  }
+  
+  /**
+   * Shows the progress bar.
+   */
+  show() {
+    this.removeClass('hide');
+    this.addClass('show');
+  }
+}
+window.ProgressBar = ProgressBar;
+
+// ===== jsGrid.js Integration =====
+/**
+ * Represents a jsGrid table. The grid will be initialized on a div with the
+ * specified ID after the element has been added to the DOM.
+ */
+class JsGrid extends Div {
+  /**
+   * @param {string} id - The DOM ID for the jsGrid container.
+   * @param {object} options - The configuration object for jsGrid.
+   * @param {object} attrs - Additional attributes for the container div.
+   */
+  constructor(id, options = {}, attrs = {}) {
+    super({ id, ...attrs });
+    this.id = id;
+    this.options = options;
+  }
+
+  /**
+   * Initializes the jsGrid component on the element.
+   * This method must be called after the element is attached to the DOM.
+   * @param {function} [customInitCallback=null] - Optional callback to run after initialization.
+   */
+  init(customInitCallback = null) {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.jsGrid === 'undefined') {
+      console.error('jQuery or jsGrid library not found. Please ensure they are loaded.');
+      return;
+    }
+    
+    const gridElement = jQuery(`#${this.id}`);
+    if (gridElement.length) {
+      gridElement.jsGrid(this.options);
+      
+      if (typeof customInitCallback === 'function') {
+        customInitCallback(gridElement);
+      }
+    } else {
+      console.warn(`JsGrid container with ID "${this.id}" not found in the DOM.`);
+    }
+  }
+}
+window.JsGrid = JsGrid;
