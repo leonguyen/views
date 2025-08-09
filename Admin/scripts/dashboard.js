@@ -1,7 +1,7 @@
-// Load AdminLTE CSS/JS dependencies (Bootstrap 5, FontAwesome, AdminLTE)
+// --- Load AdminLTE v4 CSS/JS dependencies (Bootstrap 5, FontAwesome, AdminLTE) ---
 loadAdminLTE5Deps({ adminlteVersion: '4.0.0' });
 
-// --- Helper: Build sidebar menu from JSON with nested submenus ---
+// --- Helper: Build sidebar menu dynamically from JSON ---
 function buildSidebarMenu(items) {
   function makeItem(it) {
     const li = new Li({ class: 'nav-item' + (it.children?.length ? ' has-treeview' : '') });
@@ -34,7 +34,7 @@ function buildSidebarMenu(items) {
   return nav;
 }
 
-// --- Widget creators (InfoBox, SmallBox, Callout) ---
+// --- Widget Builders ---
 function createInfoBox(bgClass, iconClass, text, number, progressPercent, description) {
   return new HtmlRaw(`
     <div class="info-box ${bgClass}">
@@ -70,23 +70,28 @@ function createCallout(type, title, content) {
   `);
 }
 
-// --- Enable Bootstrap 5 form validation styles ---
+// --- Form validation enabling function ---
 function enableFormValidation() {
   window.addEventListener('load', () => {
     const forms = document.getElementsByClassName('needs-validation');
     Array.prototype.forEach.call(forms, form => {
-      form.addEventListener('submit', event => {
-        if (!form.checkValidity()) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }, false);
+      form.addEventListener(
+        'submit',
+        event => {
+          if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        },
+        false
+      );
     });
   });
 }
 
 // --- Build AdminLTE page structure ---
+
 const wrapper = new AdminLTEWrapper();
 const navbar = new AdminLTENavbar().addLeftToggleButton();
 const sidebar = new AdminLTESidebar('<b>MyBrand</b> Admin');
@@ -100,17 +105,18 @@ sidebar.addUserPanel(`
   </div>
 `);
 
-// Sidebar menu JSON data
 const sidebarMenuItems = [
   { text: 'Dashboard', href: '#', active: true, icon: 'fas fa-tachometer-alt' },
   {
-    text: 'Layout Options', icon: 'fas fa-copy', children: [
+    text: 'Layout Options',
+    icon: 'fas fa-copy',
+    children: [
       { text: 'Top Navigation', href: '#' },
       { text: 'Boxed', href: '#' },
       { text: 'Fixed Sidebar', href: '#' },
-    ]
+    ],
   },
-  { text: 'Charts', href: '#', icon: 'fas fa-chart-pie' }
+  { text: 'Charts', href: '#', icon: 'fas fa-chart-pie' },
 ];
 
 sidebar.addMenu(buildSidebarMenu(sidebarMenuItems));
@@ -127,35 +133,37 @@ const uiElementsCard = new AdminLTECard('info')
       .addChild(new Button({ class: 'btn btn-primary' }).addText('Primary Button'))
       .addChild(new Button({ class: 'btn btn-outline-secondary' }).addText('Outline Button'))
       .addChild(new Span({ class: 'badge bg-success' }).addText('Success Badge'))
-      .addChild(new Div({ class: 'spinner-border text-primary', role: 'status' }).addChild(
-        new Span({ class: 'visually-hidden' }).addText('Loading...')
-      ))
+      .addChild(
+        new Div({ class: 'spinner-border text-primary', role: 'status' }).addChild(
+          new Span({ class: 'visually-hidden' }).addText('Loading...')
+        )
+      )
   )
   .addBody(
     new HtmlRaw(`
-      <div class="accordion" id="dashboardAccordion">
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="heading1">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
-              Accordion Item #1
-            </button>
-          </h2>
-          <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#dashboardAccordion">
-            <div class="accordion-body">Content for the first accordion item.</div>
-          </div>
-        </div>
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="heading2">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
-              Accordion Item #2
-            </button>
-          </h2>
-          <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
-            <div class="accordion-body">Content for the second accordion item.</div>
-          </div>
+    <div class="accordion" id="dashboardAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading1">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+            Accordion Item #1
+          </button>
+        </h2>
+        <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#dashboardAccordion">
+          <div class="accordion-body">Content for the first accordion item.</div>
         </div>
       </div>
-    `)
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading2">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+            Accordion Item #2
+          </button>
+        </h2>
+        <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+          <div class="accordion-body">Content for the second accordion item.</div>
+        </div>
+      </div>
+    </div>
+  `)
   );
 
 mainContentDiv.addChild(uiElementsCard);
@@ -215,50 +223,62 @@ const widgetCard = new AdminLTECard('primary')
   .addHeader('Widgets')
   .addBody(
     new Div({ class: 'row' })
-      .addChild(new Div({ class: 'col-lg-4 col-6' }).addChild(createInfoBox('bg-info', 'fas fa-cogs', 'CPU Traffic', '10%', 10, 'More info below')))
-      .addChild(new Div({ class: 'col-lg-4 col-6' }).addChild(createSmallBox('bg-success', '53%', 'Bounce Rate', 'ion ion-stats-bars', '#', 'More info')))
-      .addChild(new Div({ class: 'col-lg-4 col-12' }).addChild(createCallout('warning', 'Warning!', 'This is a warning callout message.')))
+      .addChild(
+        new Div({ class: 'col-lg-4 col-6' }).addChild(
+          createInfoBox('bg-info', 'fas fa-cogs', 'CPU Traffic', '10%', 10, 'More info below')
+        )
+      )
+      .addChild(
+        new Div({ class: 'col-lg-4 col-6' }).addChild(
+          createSmallBox('bg-success', '53%', 'Bounce Rate', 'ion ion-stats-bars', '#', 'More info')
+        )
+      )
+      .addChild(
+        new Div({ class: 'col-lg-4 col-12' }).addChild(
+          createCallout('warning', 'Warning!', 'This is a warning callout message.')
+        )
+      )
   );
 
 mainContentDiv.addChild(widgetCard);
 
 contentWrapper.addMainContent(mainContentDiv);
 
-// Footer
 const footer = new AdminLTEFooter().addRawHtml(`
   <div class="float-right d-none d-sm-inline">Anything you want</div>
   <strong>&copy; 2024 <a href="https://yourcompany.com">Your Company</a>.</strong> All rights reserved.
 `);
 
-// Assemble full layout
-wrapper.addChild(navbar)
-  .addChild(sidebar)
-  .addChild(contentWrapper)
-  .addChild(footer);
+wrapper.addChild(navbar).addChild(sidebar).addChild(contentWrapper).addChild(footer);
 
-// Append to document body
 document.body.appendChild(wrapper.toHtmlElement());
 
-// Activate Bootstrap form validation
+// Enable Bootstrap 5 validation styles
 enableFormValidation();
 
-// --- Authentication Page Example (can be separate page or modal) ---
+// -- Authentication Login Card Example (optional for separate page or modal) --
 /*
 const loginWrapper = new Div({ class: 'hold-transition login-page d-flex justify-content-center align-items-center vh-100' });
+
 const loginCard = new AdminLTECard('primary')
   .addHeader('Login')
   .addBody(
     new Form({ novalidate: true })
-      .addChild(new Div({ class: 'mb-3' })
-        .addChild(new Label({ for: 'email', class: 'form-label' }).addText('Email'))
-        .addChild(new Input('email', { class: 'form-control', id: 'email', placeholder: 'Enter email', required: true }))
-        .addChild(new Div({ class: 'invalid-feedback' }).addText('Please enter your email.')))
-      .addChild(new Div({ class: 'mb-3' })
-        .addChild(new Label({ for: 'password', class: 'form-label' }).addText('Password'))
-        .addChild(new Input('password', { class: 'form-control', id: 'password', placeholder: 'Password', required: true }))
-        .addChild(new Div({ class: 'invalid-feedback' }).addText('Please enter your password.')))
+      .addChild(
+        new Div({ class: 'mb-3' })
+          .addChild(new Label({ for: 'email', class: 'form-label' }).addText('Email'))
+          .addChild(new Input('email', { class: 'form-control', id: 'email', placeholder: 'Enter email', required: true }))
+          .addChild(new Div({ class: 'invalid-feedback' }).addText('Please enter your email.'))
+      )
+      .addChild(
+        new Div({ class: 'mb-3' })
+          .addChild(new Label({ for: 'password', class: 'form-label' }).addText('Password'))
+          .addChild(new Input('password', { class: 'form-control', id: 'password', placeholder: 'Password', required: true }))
+          .addChild(new Div({ class: 'invalid-feedback' }).addText('Please enter your password.'))
+      )
       .addChild(new Button({ type: 'submit', class: 'btn btn-primary w-100' }).addText('Sign In'))
   );
+
 loginWrapper.addChild(loginCard);
 document.body.appendChild(loginWrapper.toHtmlElement());
 enableFormValidation();
