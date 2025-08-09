@@ -1,28 +1,28 @@
-// Load AdminLTE v4 dependencies (Bootstrap 5, FontAwesome, AdminLTE CSS/JS)
+// Load AdminLTE CSS/JS dependencies (Bootstrap 5, FontAwesome, AdminLTE)
 loadAdminLTE5Deps({ adminlteVersion: '4.0.0' });
 
-// Helpers (menu builder, widgets, validation)
-function buildSidebarMenu(items){
-  function makeItem(it){
-    const li = new Li({class: 'nav-item' + (it.children?.length ? ' has-treeview' : '')});
-    const a = new A({href: it.href || '#', class: 'nav-link' + (it.active ? ' active' : '')});
+// --- Helper: Build sidebar menu from JSON with nested submenus ---
+function buildSidebarMenu(items) {
+  function makeItem(it) {
+    const li = new Li({ class: 'nav-item' + (it.children?.length ? ' has-treeview' : '') });
+    const a = new A({ href: it.href || '#', class: 'nav-link' + (it.active ? ' active' : '') });
 
-    if(it.icon) a.addChild(new Span({class:`nav-icon ${it.icon}`}));
+    if (it.icon) a.addChild(new Span({ class: `nav-icon ${it.icon}` }));
     a.addChild(new P().addText(it.text));
 
-    if(it.children?.length){
+    if (it.children?.length) {
       a.addRawHtml('<i class="right fas fa-angle-left"></i>');
     }
     li.addChild(a);
 
-    if(it.children?.length){
-      const ul = new Ul({class: 'nav nav-treeview'});
+    if (it.children?.length) {
+      const ul = new Ul({ class: 'nav nav-treeview' });
       it.children.forEach(c => ul.addChild(makeItem(c)));
       li.addChild(ul);
     }
     return li;
   }
-  const nav = new Nav({class: 'mt-2'});
+  const nav = new Nav({ class: 'mt-2' });
   const ul = new Ul({
     class: 'nav nav-pills nav-sidebar flex-column',
     'data-widget': 'treeview',
@@ -34,6 +34,7 @@ function buildSidebarMenu(items){
   return nav;
 }
 
+// --- Widget creators (InfoBox, SmallBox, Callout) ---
 function createInfoBox(bgClass, iconClass, text, number, progressPercent, description) {
   return new HtmlRaw(`
     <div class="info-box ${bgClass}">
@@ -69,12 +70,13 @@ function createCallout(type, title, content) {
   `);
 }
 
+// --- Enable Bootstrap 5 form validation styles ---
 function enableFormValidation() {
   window.addEventListener('load', () => {
     const forms = document.getElementsByClassName('needs-validation');
     Array.prototype.forEach.call(forms, form => {
       form.addEventListener('submit', event => {
-        if (!form.checkValidity()){
+        if (!form.checkValidity()) {
           event.preventDefault();
           event.stopPropagation();
         }
@@ -84,38 +86,40 @@ function enableFormValidation() {
   });
 }
 
-// Build main layout
+// --- Build AdminLTE page structure ---
 const wrapper = new AdminLTEWrapper();
-
 const navbar = new AdminLTENavbar().addLeftToggleButton();
-
 const sidebar = new AdminLTESidebar('<b>MyBrand</b> Admin');
+
 sidebar.addUserPanel(`
   <div class="image">
-    <img src="https://adminlte.io/themes/v4/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image"/>
+    <img src="https://adminlte.io/themes/v4/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image" />
   </div>
   <div class="info">
     <a href="#" class="d-block">Alexander Pierce</a>
   </div>
 `);
 
-// Sidebar menu JSON
+// Sidebar menu JSON data
 const sidebarMenuItems = [
   { text: 'Dashboard', href: '#', active: true, icon: 'fas fa-tachometer-alt' },
-  { text: 'Layout Options', icon: 'fas fa-copy', children: [
-    { text: 'Top Navigation', href: '#' },
-    { text: 'Boxed', href: '#' },
-    { text: 'Fixed Sidebar', href: '#' },
-  ]},
+  {
+    text: 'Layout Options', icon: 'fas fa-copy', children: [
+      { text: 'Top Navigation', href: '#' },
+      { text: 'Boxed', href: '#' },
+      { text: 'Fixed Sidebar', href: '#' },
+    ]
+  },
   { text: 'Charts', href: '#', icon: 'fas fa-chart-pie' }
 ];
+
 sidebar.addMenu(buildSidebarMenu(sidebarMenuItems));
 
 const contentWrapper = new AdminLTEContentWrapper().addContentHeader('Dashboard');
 
 const mainContentDiv = new Div({ class: 'container-fluid' });
 
-// UI elements card
+// UI Elements Card
 const uiElementsCard = new AdminLTECard('info')
   .addHeader('UI Elements')
   .addBody(
@@ -123,7 +127,9 @@ const uiElementsCard = new AdminLTECard('info')
       .addChild(new Button({ class: 'btn btn-primary' }).addText('Primary Button'))
       .addChild(new Button({ class: 'btn btn-outline-secondary' }).addText('Outline Button'))
       .addChild(new Span({ class: 'badge bg-success' }).addText('Success Badge'))
-      .addChild(new Div({ class: 'spinner-border text-primary', role: 'status' }).addChild(new Span({ class: 'visually-hidden' }).addText('Loading...')))
+      .addChild(new Div({ class: 'spinner-border text-primary', role: 'status' }).addChild(
+        new Span({ class: 'visually-hidden' }).addText('Loading...')
+      ))
   )
   .addBody(
     new HtmlRaw(`
@@ -154,7 +160,7 @@ const uiElementsCard = new AdminLTECard('info')
 
 mainContentDiv.addChild(uiElementsCard);
 
-// Forms card
+// Forms Card
 const formCard = new AdminLTECard('warning')
   .addHeader('Sample Form')
   .addBody(
@@ -181,7 +187,7 @@ const formCard = new AdminLTECard('warning')
 
 mainContentDiv.addChild(formCard);
 
-// Tables card
+// Tables Card
 const tableCard = new AdminLTECard('success')
   .addHeader('Sample Table')
   .addBody(
@@ -204,7 +210,7 @@ const tableCard = new AdminLTECard('success')
 
 mainContentDiv.addChild(tableCard);
 
-// Widgets card
+// Widgets Card
 const widgetCard = new AdminLTECard('primary')
   .addHeader('Widgets')
   .addBody(
@@ -218,18 +224,25 @@ mainContentDiv.addChild(widgetCard);
 
 contentWrapper.addMainContent(mainContentDiv);
 
+// Footer
 const footer = new AdminLTEFooter().addRawHtml(`
   <div class="float-right d-none d-sm-inline">Anything you want</div>
   <strong>&copy; 2024 <a href="https://yourcompany.com">Your Company</a>.</strong> All rights reserved.
 `);
 
-wrapper.addChild(navbar).addChild(sidebar).addChild(contentWrapper).addChild(footer);
+// Assemble full layout
+wrapper.addChild(navbar)
+  .addChild(sidebar)
+  .addChild(contentWrapper)
+  .addChild(footer);
 
+// Append to document body
 document.body.appendChild(wrapper.toHtmlElement());
 
+// Activate Bootstrap form validation
 enableFormValidation();
 
-// Optional Authentication page (uncomment if needed)
+// --- Authentication Page Example (can be separate page or modal) ---
 /*
 const loginWrapper = new Div({ class: 'hold-transition login-page d-flex justify-content-center align-items-center vh-100' });
 const loginCard = new AdminLTECard('primary')
