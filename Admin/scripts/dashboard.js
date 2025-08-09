@@ -1,24 +1,24 @@
-// --- Load dependencies ---
+// --- Load AdminLTE v4 CSS/JS dependencies dynamically ---
 loadAdminLTE5Deps({ adminlteVersion: '4.0.0' });
 
-// --- Create main wrapper ---
+// --- Create main AdminLTE page wrapper ---
 const wrapper = new AdminLTEWrapper();
 
-// --- Navbar with sidebar toggle ---
+// --- Navbar with sidebar toggle button ---
 const navbar = new AdminLTENavbar().addLeftToggleButton();
 
 // --- Sidebar with brand logo and user panel ---
 const sidebar = new AdminLTESidebar('<b>MyBrand</b> Admin');
 sidebar.addUserPanel(`
   <div class="image">
-    <img src="https://adminlte.io/themes/v4/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
+    <img src="https://adminlte.io/themes/v4/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image" />
   </div>
   <div class="info">
     <a href="#" class="d-block">Alexander Pierce</a>
   </div>
 `);
 
-// --- Sidebar menu ---
+// Sidebar menu with nested treeview (raw HTML for simplicity)
 const menuHtml = `
 <nav class="mt-2">
   <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
@@ -73,11 +73,10 @@ const menuHtml = `
 `;
 sidebar.addMenu(new HtmlRaw(menuHtml));
 
-// --- Content Wrapper ---
+// --- Content wrapper ---
 const contentWrapper = new AdminLTEContentWrapper()
   .addContentHeader('Dashboard')
 
-  // Add a div container for all main cards/widgets
   .addMainContent(
     new Div({ class: 'container-fluid' })
 
@@ -93,30 +92,31 @@ const contentWrapper = new AdminLTEContentWrapper()
               .addChild(new Div({ class: 'spinner-border text-primary', role: 'status' }).addChild(new Span({ class: 'visually-hidden' }).addText('Loading...')))
           )
           .addBody(
-            // Accordion using Html.js Accordion builder (optional)
-            (() => {
-              if (typeof Accordion !== 'undefined') {
-                const acc = new Accordion('uiAccordion')
-                  .addItem('Accordion Item #1', 'This is the first item content.', true)
-                  .addItem('Accordion Item #2', 'Second item content.');
-                return acc;
-              }
-              // fallback raw HTML accordion
-              return new HtmlRaw(`
-                <div class="accordion" id="rawAccordion">
-                  <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingOne">
-                      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                        Raw Accordion #1
-                      </button>
-                    </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#rawAccordion">
-                      <div class="accordion-body">Accordion body content #1</div>
-                    </div>
+            // Bootstrap 5 Accordion (fallback raw HTML if your Accordion class not defined)
+            new HtmlRaw(`
+              <div class="accordion" id="dashboardAccordion">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading1">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                      Accordion Item #1
+                    </button>
+                  </h2>
+                  <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#dashboardAccordion">
+                    <div class="accordion-body">Content for the first accordion item.</div>
                   </div>
                 </div>
-              `);
-            })()
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading2">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                      Accordion Item #2
+                    </button>
+                  </h2>
+                  <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+                    <div class="accordion-body">Content for the second accordion item.</div>
+                  </div>
+                </div>
+              </div>
+            `)
           )
       )
 
@@ -176,7 +176,7 @@ const contentWrapper = new AdminLTEContentWrapper()
           .addHeader('Widgets')
           .addBody(
             new Div({ class: 'row' })
-              // Info Box
+              // Info Box (raw HTML)
               .addChild(new HtmlRaw(`
                 <div class="col-lg-4 col-6">
                   <div class="info-box bg-info">
@@ -192,7 +192,7 @@ const contentWrapper = new AdminLTEContentWrapper()
                   </div>
                 </div>
               `))
-              // Small Box
+              // Small Box (raw HTML)
               .addChild(new HtmlRaw(`
                 <div class="col-lg-4 col-6">
                   <div class="small-box bg-success">
@@ -207,7 +207,7 @@ const contentWrapper = new AdminLTEContentWrapper()
                   </div>
                 </div>
               `))
-              // Callout Box
+              // Callout box (raw HTML)
               .addChild(new HtmlRaw(`
                 <div class="col-lg-4 col-12">
                   <div class="callout callout-warning">
@@ -217,9 +217,7 @@ const contentWrapper = new AdminLTEContentWrapper()
                 </div>
               `))
           )
-      )
-
-  );
+      );
 
 // --- Footer ---
 const footer = new AdminLTEFooter().addRawHtml(`
@@ -227,18 +225,19 @@ const footer = new AdminLTEFooter().addRawHtml(`
   <strong>&copy; 2024 <a href="https://yourcompany.com">Your Company</a>.</strong> All rights reserved.
 `);
 
-// --- Assemble layout ---
+// --- Assemble the layout ---
 wrapper.addChild(navbar).addChild(sidebar).addChild(contentWrapper).addChild(footer);
 
-// --- Append to DOM ---
+// --- Attach to body ---
 document.body.appendChild(wrapper.toHtmlElement());
 
-// --- Optional: Sample Authentication Login Card ---
 
-// You can render this card on a different page or show as modal, example here:
+// --- Optional: Authentication (Login) Card Page or Modal ---
+// You can move this login card to a separate page or display as modal as needed
 
 /*
-const loginWrapper = new Div({ class: 'hold-transition login-page' });
+const loginWrapper = new Div({ class: 'hold-transition login-page d-flex justify-content-center align-items-center vh-100' });
+
 const loginCard = new AdminLTECard('primary')
   .addHeader('Login')
   .addBody(
@@ -253,5 +252,6 @@ const loginCard = new AdminLTECard('primary')
   );
 
 loginWrapper.addChild(loginCard);
+
 document.body.appendChild(loginWrapper.toHtmlElement());
 */
