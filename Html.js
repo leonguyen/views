@@ -238,6 +238,35 @@ class HtmlRaw {
   }
 }
 
+// Add missing standard HTML elements
+class Label extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('label', attrs, children);
+  }
+}
+window.Label = Label;
+
+class Strong extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('strong', attrs, children);
+  }
+}
+window.Strong = Strong;
+
+class I extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('i', attrs, children);
+  }
+}
+window.I = I;
+
+class B extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('b', attrs, children);
+  }
+}
+window.B = B;
+
 // Specialized Elements (Builder pattern usage)
 class H1 extends HtmlElement {
   constructor(attrs = {}, children = []) {
