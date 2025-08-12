@@ -238,6 +238,35 @@ class HtmlRaw {
   }
 }
 
+// Add missing standard HTML elements
+class Label extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('label', attrs, children);
+  }
+}
+window.Label = Label;
+
+class Strong extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('strong', attrs, children);
+  }
+}
+window.Strong = Strong;
+
+class I extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('i', attrs, children);
+  }
+}
+window.I = I;
+
+class B extends HtmlElement {
+  constructor(attrs = {}, children = []) {
+    super('b', attrs, children);
+  }
+}
+window.B = B;
+
 // Specialized Elements (Builder pattern usage)
 class H1 extends HtmlElement {
   constructor(attrs = {}, children = []) {
@@ -792,3 +821,44 @@ class JsGrid extends Div {
   }
 }
 window.JsGrid = JsGrid;
+
+// ===== Tabulator.js Integration =====
+/**
+ * Represents a Tabulator table. The table will be initialized on a div with the
+ * specified ID after the element has been added to the DOM.
+ */
+class TabulatorTable extends Div {
+  /**
+   * @param {string} id - The DOM ID for the Tabulator container.
+   * @param {Array<object>} data - The data array for the table.
+   * @param {Array<object>} columns - The column definitions for the table.
+   * @param {object} options - Additional configuration options for Tabulator.
+   */
+  constructor(id, data = [], columns = [], options = {}, attrs = {}) {
+    super({ id, ...attrs });
+    this.id = id;
+    this.data = data;
+    this.columns = columns;
+    this.options = options;
+    this.tabulator = null;
+  }
+
+  /**
+   * Initializes the Tabulator component on the element.
+   * This method must be called after the element is attached to the DOM.
+   */
+  init() {
+    if (typeof Tabulator === 'undefined') {
+      console.error('Tabulator library not found. Please ensure it is loaded.');
+      return;
+    }
+
+    this.tabulator = new Tabulator(`#${this.id}`, {
+      data: this.data,
+      columns: this.columns,
+      layout: "fitColumns",
+      ...this.options
+    });
+  }
+}
+window.TabulatorTable = TabulatorTable;

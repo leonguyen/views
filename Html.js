@@ -1,10 +1,10 @@
-// ===== Html.js =====
+// ===== Merged Html.js & HtmlAdmin.js =====
 // Composite Pattern Base Class
 class HtmlElement {
   constructor(tag = null, attrs = {}, children = []) {
-    this.tag = tag; // The HTML tag (e.g. div, span)
-    this.attrs = { ...attrs }; // Element attributes (id, class, etc.)
-    this.children = children || []; // Child elements
+    this.tag = tag;
+    this.attrs = { ...attrs };
+    this.children = children || [];
   }
 
   setTag(tag) {
@@ -16,7 +16,6 @@ class HtmlElement {
     return this.tag;
   }
 
-  // Attributes
   setAttr(key, value) {
     if (value === null || value === undefined) delete this.attrs[key];
     else this.attrs[key] = value;
@@ -37,7 +36,6 @@ class HtmlElement {
     return this;
   }
 
-  // Children
   addChild(child) {
     this.children.push(child);
     return this;
@@ -63,7 +61,6 @@ class HtmlElement {
     return this;
   }
 
-  // CSS Class utilities
   addClass(className) {
     const cur = (this.attrs.class || '').split(' ').filter(Boolean);
     if (!cur.includes(className)) cur.push(className);
@@ -77,7 +74,6 @@ class HtmlElement {
     return this;
   }
 
-  // Inline style (use sparingly, prefer Bootstrap classes)
   setStyle(key, value) {
     const styleObj = this._parseStyle(this.attrs.style || '');
     styleObj[key] = value;
@@ -98,7 +94,6 @@ class HtmlElement {
       .join('; ');
   }
 
-  // Event handler attributes
   setEvent(event, handler) {
     this.attrs['on' + event] = handler;
     return this;
@@ -109,7 +104,6 @@ class HtmlElement {
     return this;
   }
 
-  // Rendering to HTML (Composite)
   toHtml() {
     if (!this.tag) return this.children.map(c => c.toHtml()).join('');
 
@@ -134,10 +128,8 @@ class HtmlElement {
     return `${markupOpen}${this.children.map(c => c.toHtml()).join('')}</${this.tag}>`;
   }
 
-  // New method to convert to a DOM element
   toHtmlElement() {
     if (!this.tag) {
-      // If it's a wrapper for children, create a document fragment or span
       const fragment = document.createDocumentFragment();
       this.children.forEach(child => {
         const el = child.toHtmlElement();
@@ -181,7 +173,6 @@ class HtmlElement {
     return this.toHtml();
   }
 
-  // Helpers
   static escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
@@ -196,7 +187,6 @@ class HtmlElement {
   }
 }
 
-// Leaf node for plain text
 class HtmlText {
   constructor(text) {
     this.text = text;
@@ -211,7 +201,6 @@ class HtmlText {
   }
 }
 
-// Leaf node for raw HTML
 class HtmlRaw {
   constructor(html) {
     this.html = html;
@@ -224,8 +213,6 @@ class HtmlRaw {
   toHtmlElement() {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = this.html;
-    // If the raw HTML is a single element, return that element.
-    // Otherwise, return a document fragment containing all parsed elements.
     if (tempDiv.children.length === 1) {
       return tempDiv.firstElementChild;
     } else {
@@ -238,36 +225,30 @@ class HtmlRaw {
   }
 }
 
-// Add missing standard HTML elements
 class Label extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('label', attrs, children);
   }
 }
-window.Label = Label;
 
 class Strong extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('strong', attrs, children);
   }
 }
-window.Strong = Strong;
 
 class I extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('i', attrs, children);
   }
 }
-window.I = I;
 
 class B extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('b', attrs, children);
   }
 }
-window.B = B;
 
-// Specialized Elements (Builder pattern usage)
 class H1 extends HtmlElement {
   constructor(attrs = {}, children = []) {
     super('h1', attrs, children);
@@ -401,11 +382,15 @@ class Td extends HtmlElement {
   }
 }
 
-// === New Bootstrap 5 Component Classes / Helpers ===
+// Semantic HTML5 tags from HtmlAdmin.js
+class Nav extends HtmlElement { constructor(attrs = {}, children = []){ super('nav', attrs, children);} }
+class Aside extends HtmlElement { constructor(attrs = {}, children = []){ super('aside', attrs, children);} }
+class Main extends HtmlElement { constructor(attrs = {}, children = []){ super('main', attrs, children);} }
+class Footer extends HtmlElement { constructor(attrs = {}, children = []){ super('footer', attrs, children);} }
+class Ol extends HtmlElement { constructor(attrs = {}, children = []){ super('ol', attrs, children);} }
 
-/**
- * Represents a Bootstrap 5 Card component.
- */
+
+// === Bootstrap 5 Component Classes / Helpers ===
 class Card extends Div {
   constructor(attrs = {}, children = []) {
     super({ class: 'card', ...attrs }, children);
@@ -446,9 +431,6 @@ class Card extends Div {
   }
 }
 
-/**
- * Represents a Bootstrap 5 Badge component.
- */
 class Badge extends Span {
   constructor(text, type = 'primary', attrs = {}) {
     super({ class: `badge bg-${type}`, ...attrs });
@@ -456,9 +438,6 @@ class Badge extends Span {
   }
 }
 
-/**
- * Represents a Bootstrap 5 Spinner component.
- */
 class Spinner extends Div {
   constructor(type = 'border', color = 'primary', srText = 'Loading...', attrs = {}) {
     super({ class: `spinner-${type} text-${color}`, role: 'status', ...attrs });
@@ -466,22 +445,11 @@ class Spinner extends Div {
   }
 }
 
-/**
- * Represents a Bootstrap 5 Accordion container.
- */
 class Accordion extends Div {
   constructor(id, attrs = {}) {
     super({ class: 'accordion', id: id, ...attrs });
   }
 
-  /**
-   * Adds an item to the accordion.
-   * @param {string} headerContent - The content for the accordion header.
-   * @param {HtmlElement|string} bodyContent - The content for the accordion body.
-   * @param {boolean} expanded - Whether the item should be expanded by default.
-   * @param {string} itemId - Optional unique ID for the item.
-   * @returns {Accordion}
-   */
   addItem(headerContent, bodyContent, expanded = false, itemId = `item-${Math.random().toString(36).substr(2, 9)}`) {
     const accordionItem = new AccordionItem(this.getAttr('id'), itemId, headerContent, bodyContent, expanded);
     this.addChild(accordionItem);
@@ -489,9 +457,6 @@ class Accordion extends Div {
   }
 }
 
-/**
- * Represents a single collapsible item within a Bootstrap Accordion.
- */
 class AccordionItem extends Div {
   constructor(parentId, itemId, headerContent, bodyContent, expanded) {
     super({ class: 'accordion-item' });
@@ -500,9 +465,6 @@ class AccordionItem extends Div {
   }
 }
 
-/**
- * Represents the header of an AccordionItem.
- */
 class AccordionHeader extends H2 {
   constructor(parentId, itemId, headerContent, expanded) {
     super({ class: 'accordion-header' });
@@ -518,9 +480,6 @@ class AccordionHeader extends H2 {
   }
 }
 
-/**
- * Represents the collapsible body of an AccordionItem.
- */
 class AccordionBody extends Div {
   constructor(parentId, itemId, bodyContent, expanded) {
     super({
@@ -532,13 +491,6 @@ class AccordionBody extends Div {
   }
 }
 
-/**
- * Builds a Bootstrap 5 List Group.
- * @param {Array<object>} items - Array of list item objects, e.g., [{ text: 'Item 1', href: '#', active: true }]
- * @param {string} type - 'ul' for <ul> based list-group, 'div' for <div> based list-group
- * @param {object} attrs - Additional attributes for the main list group container.
- * @returns {HtmlElement} The list group HtmlElement.
- */
 function buildListGroup(items, type = 'ul', attrs = {}) {
   const listContainer = type === 'ul' ? new Ul({ class: 'list-group', ...attrs }) : new Div({ class: 'list-group', ...attrs });
 
@@ -559,45 +511,198 @@ function buildListGroup(items, type = 'ul', attrs = {}) {
   return listContainer;
 }
 
-// Assign to global scope for classic JS
-window.HtmlElement = HtmlElement;
-window.HtmlText = HtmlText;
-window.HtmlRaw = HtmlRaw;
-window.H1 = H1;
-window.H2 = H2;
-window.H3 = H3;
-window.H4 = H4;
-window.H5 = H5;
-window.H6 = H6;
-window.Div = Div;
-window.Span = Span;
-window.Form = Form;
-window.Input = Input;
-window.Textarea = Textarea;
-window.Button = Button;
-window.P = P;
-window.Img = Img;
-window.A = A;
-window.Ul = Ul;
-window.Li = Li;
-window.Table = Table;
-window.Thead = Thead;
-window.Tbody = Tbody;
-window.Th = Th;
-window.Tr = Tr;
-window.Td = Td;
-// New Bootstrap 5 specific exports
-window.Card = Card;
-window.Badge = Badge;
-window.Spinner = Spinner;
-window.Accordion = Accordion;
-window.AccordionItem = AccordionItem;
-window.AccordionHeader = AccordionHeader;
-window.AccordionBody = AccordionBody;
-window.buildListGroup = buildListGroup;
+// === AdminLTE 5 Component Classes / Helpers ===
+function loadAdminLTE5Deps({ adminlteVersion = '4.0.0' } = {}) {
+  const cssUrls = [
+    `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/css/adminlte.min.css`,
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css",
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
+    "https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.1/dist/css/tabulator_bootstrap5.min.css"
+  ];
+  const jsUrls = [
+    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js",
+    `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/js/adminlte.min.js`,
+    "https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.1/dist/js/tabulator.min.js"
+  ];
 
-// A simple utility for creating HTML elements.
-// This is intentionally basic to avoid conflicts with external libraries.
+  let loadedCount = 0;
+  const totalCount = cssUrls.length + jsUrls.length;
+
+  function assetLoaded() {
+    loadedCount++;
+    if (loadedCount === totalCount) {
+      document.dispatchEvent(new Event("AdminLTEReady"));
+    }
+  }
+
+  cssUrls.forEach(url => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = url;
+    link.onload = assetLoaded;
+    document.head.appendChild(link);
+  });
+
+  jsUrls.forEach(url => {
+    const script = document.createElement("script");
+    script.src = url;
+    script.onload = assetLoaded;
+    document.body.appendChild(script);
+  });
+}
+
+class AdminLTEWrapper extends Div {
+  constructor(attrs = {}, children = []) {
+    super({ class: 'wrapper', ...attrs }, children);
+  }
+}
+
+class AdminLTENavbar extends Nav {
+  constructor(attrs = {}, children = []) {
+    super({ class: 'main-header navbar navbar-expand navbar-white navbar-light', ...attrs }, children);
+  }
+  addLeftToggleButton(){
+    const btn = new A({ href: '#', class: 'nav-link', 'data-lte-toggle': 'sidebar', role: 'button' })
+      .addRawHtml('<i class="fas fa-bars"></i>');
+    this.addChild(new Div({ class: 'navbar-nav' }).addChild(btn));
+    return this;
+  }
+}
+
+class AdminLTESidebar extends Aside {
+  constructor(brandHtml, attrs = {}, children = []){
+    super({ class: 'main-sidebar sidebar-dark-primary elevation-4', ...attrs }, children);
+    if (brandHtml) {
+      const brand = new A({ href: '#', class: 'brand-link' }).addRawHtml(brandHtml);
+      this.addChild(brand);
+    }
+    this._sidebarContent = new Div({ class: 'sidebar' });
+    this.addChild(this._sidebarContent);
+  }
+  addUserPanel(html){
+    const up = new Div({ class: 'user-panel mt-3 pb-3 mb-3 d-flex' }).addRawHtml(html);
+    this._sidebarContent.addChild(up);
+    return this;
+  }
+  addMenu(menuEl){
+    this._sidebarContent.addChild(menuEl);
+    return this;
+  }
+}
+
+class AdminLTEContentWrapper extends Div {
+  constructor(attrs = {}, children = []){
+    super({ class: 'content-wrapper', ...attrs }, children);
+  }
+  addContentHeader(title, breadcrumbEl = null){
+    const header = new Div({ class: 'content-header' })
+      .addChild(new Div({ class: 'container-fluid' })
+        .addChild(new Div({ class: 'row mb-2' })
+          .addChild(new Div({ class: 'col-sm-6' }).addChild(new H3({ class: 'm-0' }).addText(title || '')))
+          .addChild(new Div({ class: 'col-sm-6' }).addChild(breadcrumbEl || new Div()))
+        )
+      );
+    this.addChild(header);
+    return this;
+  }
+  addMainContent(el){
+    const section = new Div({ class: 'content' }).addChild(new Div({ class: 'container-fluid' }).addChild(el));
+    this.addChild(section);
+    return this;
+  }
+}
+
+class AdminLTEFooter extends Footer {
+  constructor(attrs = {}, children = []){
+    super({ class: 'main-footer', ...attrs }, children);
+  }
+}
+
+class AdminLTECard extends Card {
+  constructor(type = 'primary', outline = false, attrs = {}, children = []){
+    const cls = outline ? `card card-outline card-${type}` : `card card-${type}`;
+    super({ class: cls, ...attrs }, children);
+  }
+  addTools(html){
+    const lastHeader = this.children.find(c => c.attrs && c.attrs.class && c.attrs.class.includes('card-header'));
+    if (lastHeader) {
+      lastHeader.addRawHtml(`<div class="card-tools">${html}</div>`);
+    }
+    return this;
+  }
+}
+
+class AdminLTEInfoBox extends Div {
+  constructor(iconClass, text, number, bg='info', attrs = {}){
+    super({ class: 'info-box', ...attrs });
+    this.addChild(new Span({ class: `info-box-icon bg-${bg}` }).addRawHtml(`<i class="${iconClass}"></i>`));
+    const content = new Div({ class: 'info-box-content' })
+      .addChild(new Span({ class: 'info-box-text' }).addText(text))
+      .addChild(new Span({ class: 'info-box-number' }).addText(number));
+    this.addChild(content);
+  }
+}
+
+class AdminLTESmallBox extends Div {
+  constructor(number, text, iconClass='fa fa-chart-pie', bg='info', linkHref = '#', attrs = {}){
+    super({ class: `small-box bg-${bg}`, ...attrs });
+    const inner = new Div({ class: 'inner' }).addChild(new H3().addText(String(number))).addChild(new P().addText(text));
+    const icon = new Div({ class: 'icon' }).addRawHtml(`<i class="${iconClass}"></i>`);
+    const link = new A({ href: linkHref, class: 'small-box-footer' }).addRawHtml('More info <i class="fas fa-arrow-circle-right"></i>');
+    this.addChild(inner).addChild(icon).addChild(link);
+  }
+}
+
+class AdminLTECallout extends Div {
+  constructor(title, message, type='info', attrs = {}){
+    super({ class: `callout callout-${type}`, ...attrs });
+    if (title) this.addChild(new H5().addText(title));
+    if (message) this.addChild(new P().addText(message));
+  }
+}
+
+class AdminLTETable extends Table {
+  constructor(attrs = {}, headers = [], rows = []){
+    super({ class: 'table table-bordered table-hover', ...attrs });
+    if (headers.length) this.addChild(new Thead().addChild(new Tr().addChildren(headers.map(h => new Th().addText(h)))));
+    const tb = new Tbody();
+    rows.forEach(row => tb.addChild(new Tr().addChildren(row.map(c => new Td().addText(c)))));
+    this.addChild(tb);
+  }
+}
+
+function buildAdminBreadcrumb(items = []){
+  const ol = new Ol({ class: 'breadcrumb float-sm-end' });
+  items.forEach(it => ol.addChild(new Li({ class: 'breadcrumb-item' }).addChild(it.href ? new A({ href: it.href }).addText(it.text) : new Span().addText(it.text))));
+  return new Div({ class: 'container-fluid' }).addChild(new Div({ class: 'row mb-2' })
+    .addChild(new Div({ class: 'col-sm-6' }))
+    .addChild(new Div({ class: 'col-sm-6' }).addChild(ol)));
+}
+
+function buildAdminMenu(items = []){
+  const nav = new Nav({ class: 'mt-2' });
+  const ul = new Ul({ class: 'nav nav-pills nav-sidebar flex-column', role: 'menu', 'data-accordion': 'false' });
+
+  function makeItem(it){
+    const li = new Li({ class: 'nav-item' });
+    if (it.children && it.children.length){
+      const a = new A({ href: '#', class: 'nav-link' }).addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}<i class="right fas fa-angle-left"></i></p>`);
+      const innerUl = new Ul({ class: 'nav nav-treeview' });
+      it.children.forEach(c => innerUl.addChild(makeItem(c)));
+      li.addChild(a).addChild(innerUl);
+    } else {
+      const a = new A({ href: it.href || '#', class: `nav-link ${it.active ? 'active' : ''}` }).addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}${it.badge ? `<span class=\"right badge badge-${it.badge.type || 'danger'}\">${it.badge.text}</span>` : ''}</p>`);
+      li.addChild(a);
+    }
+    return li;
+  }
+
+  items.forEach(i => ul.addChild(makeItem(i)));
+  nav.addChild(ul);
+  return nav;
+}
+
+// ===== Utility functions =====
 function createElement(tag, attrs = {}, children = []) {
   const el = document.createElement(tag);
 
@@ -619,10 +724,8 @@ function createElement(tag, attrs = {}, children = []) {
 
   return el;
 }
-window.createElement = createElement;
 
-// ===== TableBuilder.js =====
-window.buildTable = function buildTable(headers, rows) {
+function buildTable(headers, rows) {
   const thead = new Thead().addChild(
     new Tr().addChild(...headers.map(h => new Th().addText(h)))
   );
@@ -631,17 +734,15 @@ window.buildTable = function buildTable(headers, rows) {
     tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell))));
   });
   return new Table({ class: 'table table-bordered' }).addChild(thead).addChild(tbody).toHtml();
-};
+}
 
-// ===== AlertBuilder.js =====
-window.buildAlert = function buildAlert(type, message) {
+function buildAlert(type, message) {
   return new Div({ class: `alert alert-${type}`, role: 'alert' })
     .addText(message)
     .toHtml();
-};
+}
 
-// ===== FormBuilder.js =====
-window.buildForm = function buildForm(fields, submitText = 'Submit') {
+function buildForm(fields, submitText = 'Submit') {
   const form = new Form({ class: 'form' });
 
   fields.forEach(field => {
@@ -666,10 +767,9 @@ window.buildForm = function buildForm(fields, submitText = 'Submit') {
 
   form.addChild(new Button({ type: 'submit', class: 'btn btn-primary' }).addText(submitText));
   return form.toHtml();
-};
+}
 
-// ===== ModalBuilder.js =====
-window.buildModal = function buildModal(id, title, body) {
+function buildModal(id, title, body) {
   return new Div({ class: 'modal fade', id: id, tabindex: '-1' })
     .addChild(
       new Div({ class: 'modal-dialog' })
@@ -683,17 +783,10 @@ window.buildModal = function buildModal(id, title, body) {
               .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close')))
         )
     ).toHtml();
-};
+}
 
-/**
- * Represents a Dropzone-enhanced Form built with Html.js
- */
+
 class DropzoneForm extends Form {
-  /**
-   * * @param {string} id - DOM ID of the Dropzone
-   * @param {object} dzOptions - Dropzone configuration
-   * @param {Array<HtmlElement>} children - optional inner elements (e.g., fallback input)
-   */
   constructor(id, dzOptions = {}, children = []) {
     super({ id, class: "dropzone", action: "/", enctype: "multipart/form-data" }, children);
 
@@ -702,14 +795,9 @@ class DropzoneForm extends Form {
     this.initialized = false;
   }
 
-  /**
-   * Attach Dropzone.js instance to this form
-   * Should be called after appending to DOM
-   */
   initDropzone(customInitCallback = null) {
     Dropzone.autoDiscover = false;
     
-    // Add the default message to the Dropzone element
     const messageDiv = new Div({ class: 'dz-message' }).addText('Drag and drop images here or click to upload.').toHtmlElement();
     const element = this.toHtmlElement();
     element.appendChild(messageDiv);
@@ -731,12 +819,8 @@ class DropzoneForm extends Form {
     return dz;
   }
 }
-window.DropzoneForm = DropzoneForm;
 
-/**
- * Creates and manages a progress bar using the BProgress library.
- * This class is a wrapper around the bprogress functionality.
- */
+
 class ProgressBar extends Div {
   constructor(attrs = {}) {
     super({ class: 'progress', ...attrs });
@@ -751,57 +835,32 @@ class ProgressBar extends Div {
     this.addChild(this.bar);
   }
   
-  /**
-   * Updates the progress bar to a new value.
-   * @param {number} value - The new progress value (0-100).
-   */
   update(value) {
     const clampedValue = Math.max(0, Math.min(100, value));
     this.bar.setAttr('aria-valuenow', clampedValue);
     this.bar.setStyle('width', `${clampedValue}%`);
   }
   
-  /**
-   * Hides the progress bar.
-   */
   hide() {
     this.removeClass('show');
     this.addClass('hide');
     this.update(0);
   }
   
-  /**
-   * Shows the progress bar.
-   */
   show() {
     this.removeClass('hide');
     this.addClass('show');
   }
 }
-window.ProgressBar = ProgressBar;
 
-// ===== jsGrid.js Integration =====
-/**
- * Represents a jsGrid table. The grid will be initialized on a div with the
- * specified ID after the element has been added to the DOM.
- */
+
 class JsGrid extends Div {
-  /**
-   * @param {string} id - The DOM ID for the jsGrid container.
-   * @param {object} options - The configuration object for jsGrid.
-   * @param {object} attrs - Additional attributes for the container div.
-   */
   constructor(id, options = {}, attrs = {}) {
     super({ id, ...attrs });
     this.id = id;
     this.options = options;
   }
 
-  /**
-   * Initializes the jsGrid component on the element.
-   * This method must be called after the element is attached to the DOM.
-   * @param {function} [customInitCallback=null] - Optional callback to run after initialization.
-   */
   init(customInitCallback = null) {
     if (typeof jQuery === 'undefined' || typeof jQuery.fn.jsGrid === 'undefined') {
       console.error('jQuery or jsGrid library not found. Please ensure they are loaded.');
@@ -820,20 +879,9 @@ class JsGrid extends Div {
     }
   }
 }
-window.JsGrid = JsGrid;
 
-// ===== Tabulator.js Integration =====
-/**
- * Represents a Tabulator table. The table will be initialized on a div with the
- * specified ID after the element has been added to the DOM.
- */
+
 class TabulatorTable extends Div {
-  /**
-   * @param {string} id - The DOM ID for the Tabulator container.
-   * @param {Array<object>} data - The data array for the table.
-   * @param {Array<object>} columns - The column definitions for the table.
-   * @param {object} options - Additional configuration options for Tabulator.
-   */
   constructor(id, data = [], columns = [], options = {}, attrs = {}) {
     super({ id, ...attrs });
     this.id = id;
@@ -843,10 +891,6 @@ class TabulatorTable extends Div {
     this.tabulator = null;
   }
 
-  /**
-   * Initializes the Tabulator component on the element.
-   * This method must be called after the element is attached to the DOM.
-   */
   init() {
     if (typeof Tabulator === 'undefined') {
       console.error('Tabulator library not found. Please ensure it is loaded.');
@@ -861,4 +905,70 @@ class TabulatorTable extends Div {
     });
   }
 }
+
+// Assign all classes and functions to the global scope
+window.HtmlElement = HtmlElement;
+window.HtmlText = HtmlText;
+window.HtmlRaw = HtmlRaw;
+window.Label = Label;
+window.Strong = Strong;
+window.I = I;
+window.B = B;
+window.H1 = H1;
+window.H2 = H2;
+window.H3 = H3;
+window.H4 = H4;
+window.H5 = H5;
+window.H6 = H6;
+window.Div = Div;
+window.Span = Span;
+window.Form = Form;
+window.Input = Input;
+window.Textarea = Textarea;
+window.Button = Button;
+window.P = P;
+window.Img = Img;
+window.A = A;
+window.Ul = Ul;
+window.Li = Li;
+window.Table = Table;
+window.Thead = Thead;
+window.Tbody = Tbody;
+window.Tr = Tr;
+window.Th = Th;
+window.Td = Td;
+window.Nav = Nav;
+window.Aside = Aside;
+window.Main = Main;
+window.Footer = Footer;
+window.Ol = Ol;
+window.Card = Card;
+window.Badge = Badge;
+window.Spinner = Spinner;
+window.Accordion = Accordion;
+window.AccordionItem = AccordionItem;
+window.AccordionHeader = AccordionHeader;
+window.AccordionBody = AccordionBody;
+window.buildListGroup = buildListGroup;
+window.loadAdminLTE5Deps = loadAdminLTE5Deps;
+window.AdminLTEWrapper = AdminLTEWrapper;
+window.AdminLTENavbar = AdminLTENavbar;
+window.AdminLTESidebar = AdminLTESidebar;
+window.AdminLTEContentWrapper = AdminLTEContentWrapper;
+window.AdminLTEFooter = AdminLTEFooter;
+window.AdminLTECard = AdminLTECard;
+window.AdminLTEInfoBox = AdminLTEInfoBox;
+window.AdminLTESmallBox = AdminLTESmallBox;
+window.AdminLTECallout = AdminLTECallout;
+window.AdminLTETable = AdminLTETable;
+window.buildAdminMenu = buildAdminMenu;
+window.buildAdminBreadcrumb = buildAdminBreadcrumb;
+window.createElement = createElement;
+window.buildTable = buildTable;
+window.buildAlert = buildAlert;
+window.buildForm = buildForm;
+window.buildModal = buildModal;
+window.DropzoneForm = DropzoneForm;
+window.ProgressBar = ProgressBar;
+window.JsGrid = JsGrid;
 window.TabulatorTable = TabulatorTable;
