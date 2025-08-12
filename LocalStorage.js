@@ -52,7 +52,7 @@ class LocalStorage {
         return list.length > 0 ? list[list.length - 1] : null; // Return last item or null if empty
     }
     static last(key = "") {
-        return this.last(key);
+        return new LocalStorage(key).last();
     }
     // New Function: Get Item at Specific Index
     at(index) {
@@ -65,3 +65,24 @@ class LocalStorage {
 // or ensure it's loaded before other scripts that depend on it.
 // For example:
 // window.LocalStorage = LocalStorage;
+
+// Merged functionality from LocalStorageHelper.js
+LocalStorage.supabase = {
+    getSupabaseConfig() {
+        return {
+            url: localStorage.getItem('SUPABASE_URL') || '',
+            key: localStorage.getItem('SUPABASE_KEY') || ''
+        };
+    },
+    saveSupabaseConfig(url, key) {
+        localStorage.setItem('SUPABASE_URL', url);
+        localStorage.setItem('SUPABASE_KEY', key);
+    },
+    resetSupabaseConfig() {
+        localStorage.removeItem('SUPABASE_URL');
+        localStorage.removeItem('SUPABASE_KEY');
+    },
+    hasSupabaseConfig() {
+        return !!localStorage.getItem('SUPABASE_URL') && !!localStorage.getItem('SUPABASE_KEY');
+    }
+};
