@@ -890,3 +890,395 @@ for (const key in exports) {
     window[key] = exports[key];
   }
 }
+
+
+
+/* ==== Embedded Flow.js-lite (API-compatible subset) ====
+   Note: This is a lightweight, inlined implementation inspired by flowjs/flow.js.
+   It aims to be wire-compatible with the standard Flow.js protocol (chunk params)
+   and provides: chunked uploads, pause/resume, progress, cancel, drop/browse.
+   If you need 100% feature parity, swap this block with the official source.
+*/
+(function(global){
+  function EventEmitter(){ this._events = {}; }
+  EventEmitter.prototype.on = function(name, fn){ (this._events[name]||(this._events[name]=[])).push(fn); return this; };
+  EventEmitter.prototype.off = function(name, fn){
+    if(!this._events[name]) return this;
+    if(!fn){ delete this._events[name]; return this; }
+    this._events[name] = this._events[name].filter(f=>f!==fn); return this;
+  };
+  EventEmitter.prototype.emit = function(name){
+    var args = Array.prototype.slice.call(arguments,1);
+    (this._events[name]||[]).slice().forEach(fn=>{ try{ fn.apply(null,args);}catch(e){ console.error(e);} });
+  };
+
+  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function sliceBlob(blob, start, end){ return blob.slice ? blob.slice(start,end) : blob.webkitSlice(start,end); }
+
+  function FlowFile(flow, file, relativePath){
+    this.flow = flow;
+    this.file = file;
+    this.name = file.name;
+    this.size = file.size;
+    this.relativePath = relativePath || file.webkitRelativePath || file.name;
+    this.uniqueIdentifier = (flow.opts.generateUniqueIdentifier || function(file){
+      return (file.size + '-' + (file.name||'').replace(/[^0-9a-zA-Z_-]/g,'') + '-' + uid());
+    })(file, this);
+    this.chunks = [];
+    this._paused = false;
+    this._completed = false;
+    this._errored = false;
+    this._progress = 0;
+    // Build chunks
+    var chunkSize = flow.opts.chunkSize;
+    var offset = 0, index = 0;
+    while(offset < this.size){
+      var end = Math.min(this.size, offset + chunkSize);
+      this.chunks.push(new FlowChunk(this, index++, offset, end));
+      offset = end;
+    }
+  }
+  FlowFile.prototype.pause = function(){ this._paused = true; };
+  FlowFile.prototype.resume = function(){ this._paused = false; };
+  FlowFile.prototype.isComplete = function(){ return this._completed; };
+  FlowFile.prototype.isPaused = function(){ return this._paused; };
+  FlowFile.prototype.progress = function(){ return this._progress; };
+  FlowFile.prototype._recomputeProgress = function(){
+    var done = 0;
+    for(var i=0;i<this.chunks.length;i++){
+      done += this.chunks[i].progress();
+    }
+    this._progress = done / this.chunks.length;
+  };
+
+  function FlowChunk(flowFile, index, start, end){
+    this.flowFile = flowFile;
+    this.index = index+1; // 1-based like Flow.js
+    this.start = start;
+    this.end = end;
+    this.size = end - start;
+    this._loaded = 0;
+    this._sent = false;
+    this._success = false;
+    this._error = false;
+    this._xhr = null;
+  }
+  FlowChunk.prototype.progress = function(){
+    if(this._success) return 1;
+    if(this._error) return 0;
+    return this.size ? (this._loaded / this.size) : 0;
+  };
+  FlowChunk.prototype.abort = function(){
+    try{ if(this._xhr) this._xhr.abort(); }catch(e){}
+  };
+  FlowChunk.prototype.send = function(cb){
+    var self = this, file = self.flowFile.file, flow = self.flowFile.flow, o = flow.opts;
+    var blob = sliceBlob(file, self.start, self.end);
+    var params = Object.assign({}, (typeof o.query==='function'?o.query(self):o.query)||{}, {
+      chunkNumber: self.index,
+      chunkSize: o.chunkSize,
+      currentChunkSize: blob.size,
+      totalSize: file.size,
+      identifier: self.flowFile.uniqueIdentifier,
+      filename: self.flowFile.name,
+      relativePath: self.flowFile.relativePath,
+      totalChunks: self.flowFile.chunks.length
+    });
+
+    var form = new FormData();
+    Object.keys(params).forEach(k=>form.append(k, params[k]));
+    form.append(o.fileParameterName, blob, self.flowFile.name);
+
+    var xhr = new XMLHttpRequest();
+    self._xhr = xhr;
+    xhr.open(o.method || 'POST', o.target, true);
+
+    // Headers
+    var headers = (typeof o.headers==='function'?o.headers(self):o.headers)||{};
+    Object.keys(headers).forEach(k=>xhr.setRequestHeader(k, headers[k]));
+
+    xhr.upload.onprogress = function(e){
+      if(e.lengthComputable){
+        self._loaded = e.loaded;
+        self.flowFile._recomputeProgress();
+        flow.emit('fileProgress', self.flowFile, self);
+        flow.emit('progress');
+      }
+    };
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState===4){
+        if(xhr.status>=200 && xhr.status<300){
+          self._success = true;
+          self._sent = true;
+          flow.emit('chunkSuccess', self.flowFile, self, xhr);
+          // If all chunks success -> fileSuccess
+          var allOk = self.flowFile.chunks.every(c=>c._success);
+          self.flowFile._recomputeProgress();
+          flow.emit('fileProgress', self.flowFile, self);
+          if(allOk){
+            self.flowFile._completed = true;
+            flow.emit('fileSuccess', self.flowFile, xhr);
+            // If all files complete -> complete
+            var allFilesOk = flow.files.every(f=>f.isComplete());
+            if(allFilesOk) flow.emit('complete');
+          }
+          cb && cb(null);
+        }else{
+          self._error = true;
+          flow.emit('chunkError', self.flowFile, self, xhr);
+          flow.emit('fileError', self.flowFile, xhr);
+          cb && cb(new Error('HTTP '+xhr.status));
+        }
+      }
+    };
+    xhr.onerror = function(){
+      self._error = true;
+      flow.emit('chunkError', self.flowFile, self, xhr);
+      flow.emit('fileError', self.flowFile, xhr);
+      cb && cb(new Error('network error'));
+    };
+    xhr.send(form);
+  };
+
+  function Flow(opts){
+    this.opts = Object.assign({
+      target: '/upload',
+      singleFile: false,
+      fileParameterName: 'file',
+      chunkSize: 1024*1024, // 1MB
+      simultaneousUploads: 3,
+      method: 'POST',
+      query: {},
+      headers: {},
+      testChunks: false
+    }, opts||{});
+    this.files = [];
+    this._emitter = new EventEmitter();
+    this._processing = false;
+  }
+  Flow.prototype.on = function(n, fn){ this._emitter.on(n, fn); return this; };
+  Flow.prototype.off = function(n, fn){ this._emitter.off(n, fn); return this; };
+  Flow.prototype.emit = function(){ this._emitter.emit.apply(this._emitter, arguments); };
+  Flow.prototype.addFile = function(file, relativePath){
+    var f = new FlowFile(this, file, relativePath);
+    if(this.opts.singleFile) this.files = [f]; else this.files.push(f);
+    this.emit('fileAdded', f);
+    this.emit('filesSubmitted', [f]);
+    return f;
+  };
+  Flow.prototype.addFiles = function(fileList){
+    var arr = Array.prototype.slice.call(fileList);
+    var added = arr.map(f=>this.addFile(f));
+    this.emit('filesSubmitted', added);
+    return added;
+  };
+  Flow.prototype.assignBrowse = function(domNode, isDirectory, multiple){
+    var input = document.createElement('input');
+    input.type = 'file';
+    if(multiple!==false && !this.opts.singleFile) input.multiple = true;
+    if(isDirectory){ input.setAttribute('webkitdirectory',''); }
+    input.style.display = 'none';
+    domNode._flowBrowseInput = input;
+    domNode.addEventListener('click', function(){ input.value=''; input.click(); });
+    var self = this;
+    input.addEventListener('change', function(e){
+      if(e.target.files && e.target.files.length){
+        self.addFiles(e.target.files);
+        self.emit('browse', e.target.files);
+      }
+    });
+    document.body.appendChild(input);
+  };
+  Flow.prototype.assignDrop = function(domNode){
+    var self = this;
+    domNode.addEventListener('dragover', function(e){ e.preventDefault(); domNode.classList.add('is-dragover'); });
+    domNode.addEventListener('dragleave', function(e){ domNode.classList.remove('is-dragover'); });
+    domNode.addEventListener('drop', function(e){
+      e.preventDefault();
+      domNode.classList.remove('is-dragover');
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        self.addFiles(e.dataTransfer.files);
+      }
+    });
+  };
+  Flow.prototype.upload = function(){
+    var self = this;
+    if(this._processing) return;
+    this._processing = true;
+    function pump(){
+      if(!self._processing) return;
+      var inFlight = 0;
+      // Find next chunk to send for any non-paused, non-complete file
+      for(var i=0;i<self.files.length;i++){
+        var f = self.files[i];
+        if(f.isPaused() || f.isComplete()) continue;
+        var next = f.chunks.find(c=>!c._sent && !c._success && !c._error);
+        while(next && inFlight < self.opts.simultaneousUploads){
+          inFlight++;
+          (function(chunk){
+            chunk.send(function(){
+              inFlight--;
+              pump();
+            });
+          })(next);
+          next = f.chunks.find(c=>!c._sent && !c._success && !c._error);
+        }
+      }
+      // If nothing in flight and no pending chunks, stop
+      var hasPending = self.files.some(f=>f.chunks.some(c=>!c._success && !c._error));
+      if(!hasPending && inFlight===0){ self._processing = false; }
+    }
+    pump();
+  };
+  Flow.prototype.pause = function(){
+    this._processing = false;
+    this.files.forEach(f=>f.pause());
+  };
+  Flow.prototype.resume = function(){
+    this.files.forEach(f=>f.resume());
+    this.upload();
+  };
+  Flow.prototype.cancel = function(){
+    this._processing = false;
+    this.files.forEach(function(f){
+      f.chunks.forEach(c=>c.abort());
+    });
+  };
+  Flow.prototype.removeFile = function(flowFile){
+    this.files = this.files.filter(f=>f!==flowFile);
+  };
+
+  global.Flow = Flow;
+})(window);
+
+/* ==== HtmlFlowUploader (UI using HtmlElement system) ==== */
+class HtmlFlowUploader extends HtmlElement {
+  constructor(options = {}){
+    super('div', { class: 'flow-uploader' }, []);
+    const defaults = {
+      target: '/upload',
+      singleFile: false,
+      chunkSize: 1024*1024,
+      simultaneousUploads: 3,
+      method: 'POST',
+      accept: '*/*',
+      dropText: 'Drop files here',
+      buttonText: 'Select files',
+      startText: 'Start upload',
+      pauseText: 'Pause',
+      resumeText: 'Resume',
+      cancelText: 'Cancel',
+      showList: true
+    };
+    this.opts = Object.assign({}, defaults, options || {});
+    this._ids = {
+      drop: 'drop-' + Math.random().toString(36).slice(2),
+      btn: 'btn-' + Math.random().toString(36).slice(2),
+      list: 'list-' + Math.random().toString(36).slice(2),
+      start: 'start-' + Math.random().toString(36).slice(2),
+      pause: 'pause-' + Math.random().toString(36).slice(2),
+      resume: 'resume-' + Math.random().toString(36).slice(2),
+      cancel: 'cancel-' + Math.random().toString(36).slice(2),
+    };
+    this._flow = null;
+
+    // Build UI
+    this
+      .addChild(new HtmlElement('div', { id: this._ids.drop, class: 'flow-dropzone' }, [
+        new HtmlElement('p', {}, [ new HtmlText(this.opts.dropText) ])
+      ]))
+      .addChild(new HtmlElement('div', { class: 'flow-controls' }, [
+        new HtmlElement('button', { id: this._ids.btn, type: 'button', class: 'flow-btn-browse' }, [ new HtmlText(this.opts.buttonText) ]),
+        new HtmlElement('button', { id: this._ids.start, type: 'button', class: 'flow-btn-start' }, [ new HtmlText(this.opts.startText) ]),
+        new HtmlElement('button', { id: this._ids.pause, type: 'button', class: 'flow-btn-pause' }, [ new HtmlText(this.opts.pauseText) ]),
+        new HtmlElement('button', { id: this._ids.resume, type: 'button', class: 'flow-btn-resume' }, [ new HtmlText(this.opts.resumeText) ]),
+        new HtmlElement('button', { id: this._ids.cancel, type: 'button', class: 'flow-btn-cancel' }, [ new HtmlText(this.opts.cancelText) ]),
+      ]));
+
+    if(this.opts.showList){
+      this.addChild(new HtmlElement('ul', { id: this._ids.list, class: 'flow-file-list' }, []));
+    }
+  }
+
+  mount(container){
+    const el = this.toHtmlElement();
+    container.appendChild(el);
+    this._initFlow(el);
+    return el;
+  }
+
+  _initFlow(root){
+    const drop = root.querySelector('#'+this._ids.drop);
+    const btn = root.querySelector('#'+this._ids.btn);
+    const list = root.querySelector('#'+this._ids.list);
+    const startBtn = root.querySelector('#'+this._ids.start);
+    const pauseBtn = root.querySelector('#'+this._ids.pause);
+    const resumeBtn = root.querySelector('#'+this._ids.resume);
+    const cancelBtn = root.querySelector('#'+this._ids.cancel);
+
+    const flow = new Flow({
+      target: this.opts.target,
+      singleFile: this.opts.singleFile,
+      chunkSize: this.opts.chunkSize,
+      simultaneousUploads: this.opts.simultaneousUploads,
+      method: this.opts.method,
+      query: this.opts.query || {},
+      headers: this.opts.headers || {},
+      fileParameterName: this.opts.fileParameterName || 'file'
+    });
+    this._flow = flow;
+
+    flow.assignDrop(drop);
+    flow.assignBrowse(btn, false, !this.opts.singleFile);
+
+    const renderFileItem = (f)=>{
+      const li = document.createElement('li');
+      li.className = 'flow-file-item';
+      li.innerHTML = `
+        <div class="flow-file-name">${f.name}</div>
+        <div class="flow-file-progress"><div class="bar" style="width:0%"></div></div>
+        <div class="flow-file-size">${(f.size/1024/1024).toFixed(2)} MB</div>
+      `;
+      li._bar = li.querySelector('.bar');
+      li._update = function(){
+        li._bar.style.width = Math.round(f.progress()*100) + '%';
+      };
+      return li;
+    };
+
+    const fileNodes = new Map();
+
+    flow.on('fileAdded', function(file){
+      if(list){
+        const node = renderFileItem(file);
+        list.appendChild(node);
+        fileNodes.set(file, node);
+      }
+    });
+
+    flow.on('fileProgress', function(file){
+      const node = fileNodes.get(file);
+      if(node && node._update) node._update();
+    });
+
+    flow.on('fileSuccess', function(file, xhr){
+      const node = fileNodes.get(file);
+      if(node){
+        node.classList.add('success');
+        node._bar.style.width = '100%';
+      }
+    });
+
+    flow.on('fileError', function(file, xhr){
+      const node = fileNodes.get(file);
+      if(node){
+        node.classList.add('error');
+      }
+    });
+
+    startBtn && startBtn.addEventListener('click', ()=>flow.upload());
+    pauseBtn && pauseBtn.addEventListener('click', ()=>flow.pause());
+    resumeBtn && resumeBtn.addEventListener('click', ()=>flow.resume());
+    cancelBtn && cancelBtn.addEventListener('click', ()=>flow.cancel());
+  }
+}
