@@ -1,5 +1,4 @@
-// ===== Html.js (Refactor + Full Merge with AdminLTE 4 + Bootstrap 5) =====
-
+// ===== Html.js (Refactored and Merged) =====
 // Composite Pattern Base Class
 class HtmlElement {
   constructor(tag = null, attrs = {}, children = []) {
@@ -8,8 +7,14 @@ class HtmlElement {
     this.children = children || []; // Child elements
   }
 
-  setTag(tag) { this.tag = tag; return this; }
-  getTag() { return this.tag; }
+  setTag(tag) {
+    this.tag = tag;
+    return this;
+  }
+
+  getTag() {
+    return this.tag;
+  }
 
   // Attributes
   setAttr(key, value) {
@@ -17,16 +22,46 @@ class HtmlElement {
     else this.attrs[key] = value;
     return this;
   }
-  getAttr(key) { return this.attrs[key]; }
-  addAttrs(attrs) { Object.entries(attrs).forEach(([k, v]) => this.setAttr(k, v)); return this; }
-  removeAttr(key) { delete this.attrs[key]; return this; }
+
+  getAttr(key) {
+    return this.attrs[key];
+  }
+
+  addAttrs(attrs) {
+    Object.entries(attrs).forEach(([k, v]) => this.setAttr(k, v));
+    return this;
+  }
+
+  removeAttr(key) {
+    delete this.attrs[key];
+    return this;
+  }
 
   // Children
-  addChild(child) { this.children.push(child); return this; }
-  addChildren(children) { children.forEach(child => this.addChild(child)); return this; }
-  addText(text) { this.children.push(new HtmlText(text)); return this; }
-  addRawHtml(html) { this.children.push(new HtmlRaw(html)); return this; }
-  clearChildren() { this.children = []; return this; }
+  addChild(child) {
+    this.children.push(child);
+    return this;
+  }
+
+  addChildren(children) {
+    children.forEach(child => this.addChild(child));
+    return this;
+  }
+
+  addText(text) {
+    this.children.push(new HtmlText(text));
+    return this;
+  }
+
+  addRawHtml(html) {
+    this.children.push(new HtmlRaw(html));
+    return this;
+  }
+
+  clearChildren() {
+    this.children = [];
+    return this;
+  }
 
   // CSS Class utilities
   addClass(className) {
@@ -35,6 +70,7 @@ class HtmlElement {
     this.attrs.class = cur.join(' ');
     return this;
   }
+
   removeClass(className) {
     const cur = (this.attrs.class || '').split(' ').filter(Boolean);
     this.attrs.class = cur.filter(c => c !== className).join(' ');
@@ -48,12 +84,14 @@ class HtmlElement {
     this.attrs.style = this._stringifyStyle(styleObj);
     return this;
   }
+
   _parseStyle(style = '') {
     return style.split(';')
       .filter(Boolean)
       .map(s => s.split(':').map(x => x.trim()))
       .reduce((acc, [k, v]) => (k ? { ...acc, [k]: v } : acc), {});
   }
+
   _stringifyStyle(styleObj) {
     return Object.entries(styleObj)
       .map(([k, v]) => `${k}: ${v}`)
@@ -61,8 +99,15 @@ class HtmlElement {
   }
 
   // Event handler attributes
-  setEvent(event, handler) { this.attrs['on' + event] = handler; return this; }
-  removeEvent(event) { delete this.attrs['on' + event]; return this; }
+  setEvent(event, handler) {
+    this.attrs['on' + event] = handler;
+    return this;
+  }
+
+  removeEvent(event) {
+    delete this.attrs['on' + event];
+    return this;
+  }
 
   // Rendering to HTML (Composite)
   toHtml() {
@@ -83,14 +128,16 @@ class HtmlElement {
       .join(' ');
 
     const markupOpen = `<${this.tag}${attrs ? ' ' + attrs : ''}>`;
+
     if (voidTags.has(this.tag)) return markupOpen;
 
     return `${markupOpen}${this.children.map(c => c.toHtml()).join('')}</${this.tag}>`;
   }
 
-  // Convert to real DOM
+  // New method to convert to a DOM element
   toHtmlElement() {
     if (!this.tag) {
+      // If it's a wrapper for children, create a document fragment or span
       const fragment = document.createDocumentFragment();
       this.children.forEach(child => {
         const el = child.toHtmlElement();
@@ -102,31 +149,37 @@ class HtmlElement {
     const element = document.createElement(this.tag);
 
     for (const key in this.attrs) {
-      if (!Object.prototype.hasOwnProperty.call(this.attrs, key)) continue;
-      const value = this.attrs[key];
-
-      if (key === 'class') element.className = value;
-      else if (key === 'id') element.id = value;
-      else if (key === 'data' && typeof value === 'object') {
-        for (const [dataKey, dataValue] of Object.entries(value)) {
-          element.dataset[dataKey] = dataValue;
+      if (this.attrs.hasOwnProperty(key)) {
+        const value = this.attrs[key];
+        if (key === 'class') {
+          element.className = value;
+        } else if (key === 'id') {
+          element.id = value;
+        } else if (key === 'data' && typeof value === 'object') {
+          for (const [dataKey, dataValue] of Object.entries(value)) {
+            element.dataset[dataKey] = dataValue;
+          }
+        } else if (value === true) {
+          element.setAttribute(key, '');
+        } else if (value !== false && value !== null && value !== undefined) {
+          element.setAttribute(key, value);
         }
-      } else if (value === true) {
-        element.setAttribute(key, '');
-      } else if (value !== false && value !== null && value !== undefined) {
-        element.setAttribute(key, value);
       }
     }
 
     this.children.forEach(child => {
       const childElement = child.toHtmlElement();
-      if (childElement) element.appendChild(childElement);
+      if (childElement) {
+        element.appendChild(childElement);
+      }
     });
 
     return element;
   }
 
-  toString() { return this.toHtml(); }
+  toString() {
+    return this.toHtml();
+  }
 
   // Helpers
   static escapeHtml(str) {
@@ -137,79 +190,177 @@ class HtmlElement {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
-  static escapeAttr(str) { return HtmlElement.escapeHtml(str).replace(/"/g, '&quot;'); }
+
+  static escapeAttr(str) {
+    return HtmlElement.escapeHtml(str).replace(/"/g, '&quot;');
+  }
 }
 
 // Leaf node for plain text
 class HtmlText {
-  constructor(text) { this.text = text; }
-  toHtml() { return HtmlElement.escapeHtml(this.text); }
-  toHtmlElement() { return document.createTextNode(this.text); }
+  constructor(text) {
+    this.text = text;
+  }
+
+  toHtml() {
+    return HtmlElement.escapeHtml(this.text);
+  }
+
+  toHtmlElement() {
+    return document.createTextNode(this.text);
+  }
 }
 
 // Leaf node for raw HTML
 class HtmlRaw {
-  constructor(html) { this.html = html; }
-  toHtml() { return this.html; }
+  constructor(html) {
+    this.html = html;
+  }
+
+  toHtml() {
+    return this.html;
+  }
+
   toHtmlElement() {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = this.html;
-    if (tempDiv.children.length === 1) return tempDiv.firstElementChild;
-    const fragment = document.createDocumentFragment();
-    while (tempDiv.firstChild) fragment.appendChild(tempDiv.firstChild);
-    return fragment;
+    // If the raw HTML is a single element, return that element.
+    // Otherwise, return a document fragment containing all parsed elements.
+    if (tempDiv.children.length === 1) {
+      return tempDiv.firstElementChild;
+    } else {
+      const fragment = document.createDocumentFragment();
+      while (tempDiv.firstChild) {
+        fragment.appendChild(tempDiv.firstChild);
+      }
+      return fragment;
+    }
   }
 }
 
-// --- Semantic element classes ---
-class Label extends HtmlElement { constructor(attrs = {}, children = []) { super('label', attrs, children); } }
-class Strong extends HtmlElement { constructor(attrs = {}, children = []) { super('strong', attrs, children); } }
-class I extends HtmlElement { constructor(attrs = {}, children = []) { super('i', attrs, children); } }
-class B extends HtmlElement { constructor(attrs = {}, children = []) { super('b', attrs, children); } }
-class H1 extends HtmlElement { constructor(attrs = {}, children = []) { super('h1', attrs, children); } }
-class H2 extends HtmlElement { constructor(attrs = {}, children = []) { super('h2', attrs, children); } }
-class H3 extends HtmlElement { constructor(attrs = {}, children = []) { super('h3', attrs, children); } }
-class H4 extends HtmlElement { constructor(attrs = {}, children = []) { super('h4', attrs, children); } }
-class H5 extends HtmlElement { constructor(attrs = {}, children = []) { super('h5', attrs, children); } }
-class H6 extends HtmlElement { constructor(attrs = {}, children = []) { super('h6', attrs, children); } }
-class Div extends HtmlElement { constructor(attrs = {}, children = []) { super('div', attrs, children); } }
-class Span extends HtmlElement { constructor(attrs = {}, children = []) { super('span', attrs, children); } }
-class Form extends HtmlElement { constructor(attrs = {}, children = []) { super('form', attrs, children); } }
-class Input extends HtmlElement { constructor(type, attrs = {}) { super('input', { type, ...attrs }); } }
-class Textarea extends HtmlElement { constructor(attrs = {}, children = []) { super('textarea', attrs, children); } }
-class Button extends HtmlElement { constructor(attrs = {}, children = []) { super('button', attrs, children); } }
-class P extends HtmlElement { constructor(attrs = {}, children = []) { super('p', attrs, children); } }
-class Img extends HtmlElement { constructor(attrs = {}) { super('img', attrs); } }
-class A extends HtmlElement { constructor(attrs = {}, children = []) { super('a', attrs, children); } }
-class Ul extends HtmlElement { constructor(attrs = {}, children = []) { super('ul', attrs, children); } }
-class Li extends HtmlElement { constructor(attrs = {}, children = []) { super('li', attrs, children); } }
-class Table extends HtmlElement { constructor(attrs = {}, children = []) { super('table', attrs, children); } }
-class Thead extends HtmlElement { constructor(attrs = {}, children = []) { super('thead', attrs, children); } }
-class Tbody extends HtmlElement { constructor(attrs = {}, children = []) { super('tbody', attrs, children); } }
-class Tr extends HtmlElement { constructor(attrs = {}, children = []) { super('tr', attrs, children); } }
-class Th extends HtmlElement { constructor(attrs = {}, children = []) { super('th', attrs, children); } }
-class Td extends HtmlElement { constructor(attrs = {}, children = []) { super('td', attrs, children); } }
-class Nav extends HtmlElement { constructor(attrs = {}, children = []) { super('nav', attrs, children); } }
-class Aside extends HtmlElement { constructor(attrs = {}, children = []) { super('aside', attrs, children); } }
-class Main extends HtmlElement { constructor(attrs = {}, children = []) { super('main', attrs, children); } }
-class Footer extends HtmlElement { constructor(attrs = {}, children = []) { super('footer', attrs, children); } }
-class Ol extends HtmlElement { constructor(attrs = {}, children = []) { super('ol', attrs, children); } }
+// --- Semantic element classes from Html.js and HtmlAdmin.js ---
+class Label extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('label', attrs, children); }
+}
+class Strong extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('strong', attrs, children); }
+}
+class I extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('i', attrs, children); }
+}
+class B extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('b', attrs, children); }
+}
+class H1 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h1', attrs, children); }
+}
+class H2 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h2', attrs, children); }
+}
+class H3 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h3', attrs, children); }
+}
+class H4 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h4', attrs, children); }
+}
+class H5 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h5', attrs, children); }
+}
+class H6 extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('h6', attrs, children); }
+}
+class Div extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('div', attrs, children); }
+}
+class Span extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('span', attrs, children); }
+}
+class Form extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('form', attrs, children); }
+}
+class Input extends HtmlElement {
+  constructor(type, attrs = {}) { super('input', { type, ...attrs }); }
+}
+class Textarea extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('textarea', attrs, children); }
+}
+class Button extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('button', attrs, children); }
+}
+class P extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('p', attrs, children); }
+}
+class Img extends HtmlElement {
+  constructor(attrs = {}) { super('img', attrs); }
+}
+class A extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('a', attrs, children); }
+}
+class Ul extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('ul', attrs, children); }
+}
+class Li extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('li', attrs, children); }
+}
+class Table extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('table', attrs, children); }
+}
+class Thead extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('thead', attrs, children); }
+}
+class Tbody extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('tbody', attrs, children); }
+}
+class Tr extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('tr', attrs, children); }
+}
+class Th extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('th', attrs, children); }
+}
+class Td extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('td', attrs, children); }
+}
+class Nav extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('nav', attrs, children); }
+}
+class Aside extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('aside', attrs, children); }
+}
+class Main extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('main', attrs, children); }
+}
+class Footer extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('footer', attrs, children); }
+}
+class Ol extends HtmlElement {
+  constructor(attrs = {}, children = []) { super('ol', attrs, children); }
+}
 
 // --- Bootstrap 5 Component Classes / Helpers ---
 class Card extends Div {
-  constructor(attrs = {}, children = []) { super({ class: 'card', ...attrs }, children); }
+  constructor(attrs = {}, children = []) {
+    super({ class: 'card', ...attrs }, children);
+  }
+
   addHeader(headerContent) {
     const header = new Div({ class: 'card-header' });
-    if (typeof headerContent === 'string') header.addChild(new H3({ class: "card-title mb-0" }).addText(headerContent));
-    else header.addRawHtml(headerContent);
+    if (typeof headerContent === 'string') {
+      const h3 = new H3({ class: "card-title mb-0" }).addText(headerContent);
+      header.addChild(h3);
+    } else {
+      header.addRawHtml(headerContent);
+    }
     this.addChild(header);
     return this;
   }
+
   addBody(bodyContent) {
     const body = new Div({ class: 'card-body' });
-    if (typeof bodyContent === 'string') body.addRawHtml(bodyContent);
-    else if (bodyContent instanceof HtmlElement) body.addChild(bodyContent);
-    else if (Array.isArray(bodyContent)) {
+    if (typeof bodyContent === 'string') {
+      body.addRawHtml(bodyContent);
+    } else if (bodyContent instanceof HtmlElement) {
+      body.addChild(bodyContent);
+    } else if (Array.isArray(bodyContent)) {
       bodyContent.forEach(item => {
         if (typeof item === 'string') body.addRawHtml(item);
         else if (item instanceof HtmlElement) body.addChild(item);
@@ -218,6 +369,7 @@ class Card extends Div {
     this.addChild(body);
     return this;
   }
+
   addFooter(footerContent) {
     const footer = new Div({ class: 'card-footer' }).addRawHtml(footerContent);
     this.addChild(footer);
@@ -240,13 +392,17 @@ class Spinner extends Div {
 }
 
 class Accordion extends Div {
-  constructor(id, attrs = {}) { super({ class: 'accordion', id: id, ...attrs }); }
+  constructor(id, attrs = {}) {
+    super({ class: 'accordion', id: id, ...attrs });
+  }
+
   addItem(headerContent, bodyContent, expanded = false, itemId = `item-${Math.random().toString(36).substr(2, 9)}`) {
     const accordionItem = new AccordionItem(this.getAttr('id'), itemId, headerContent, bodyContent, expanded);
     this.addChild(accordionItem);
     return this;
   }
 }
+
 class AccordionItem extends Div {
   constructor(parentId, itemId, headerContent, bodyContent, expanded) {
     super({ class: 'accordion-item' });
@@ -254,6 +410,7 @@ class AccordionItem extends Div {
     this.addChild(new AccordionBody(parentId, itemId, bodyContent, expanded));
   }
 }
+
 class AccordionHeader extends H2 {
   constructor(parentId, itemId, headerContent, expanded) {
     super({ class: 'accordion-header' });
@@ -268,6 +425,7 @@ class AccordionHeader extends H2 {
     this.addChild(new Button(buttonAttrs).addRawHtml(headerContent));
   }
 }
+
 class AccordionBody extends Div {
   constructor(parentId, itemId, bodyContent, expanded) {
     super({
@@ -275,26 +433,23 @@ class AccordionBody extends Div {
       class: `accordion-collapse collapse ${expanded ? 'show' : ''}`,
       'data-bs-parent': `#${parentId}`
     });
-    this.addChild(new Div({ class: 'accordion-body' }).addRawHtml(
-      typeof bodyContent === 'string' ? bodyContent :
-      (bodyContent instanceof HtmlElement ? bodyContent.toHtml() : '')
-    ));
+    this.addChild(new Div({ class: 'accordion-body' }).addRawHtml(typeof bodyContent === 'string' ? bodyContent : bodyContent.toHtml()));
   }
 }
 
-// --- AdminLTE 4 Loader (Bootstrap 5) ---
-function loadAdminLTE5Deps(opts = {}) {
-  const adminlteVersion = opts.adminlteVersion || '4.0.0';
+// --- AdminLTE Components and Widgets ---
+function loadAdminLTEDeps(opts = {}) {
+  const adminlteVersion = opts.adminlteVersion || '3.2.0';
   const deps = [
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
+    'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/css/adminlte.min.css`,
   ];
   const scripts = [
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+    'https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js',
+    'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js',
     `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/js/adminlte.min.js`,
   ];
-
   deps.forEach(url => {
     if (!document.querySelector(`link[href='${url}']`)) {
       const link = document.createElement('link');
@@ -307,18 +462,17 @@ function loadAdminLTE5Deps(opts = {}) {
     if (!document.querySelector(`script[src='${url}']`)) {
       const s = document.createElement('script');
       s.src = url;
+      s.defer = false;
       document.head.appendChild(s);
     }
   });
   return { css: deps, js: scripts };
 }
 
-// Back-compat alias (old name -> new loader)
-const loadAdminLTEDeps = loadAdminLTE5Deps;
-
-// --- AdminLTE 4 Components and Widgets ---
 class AdminLTEWrapper extends Div {
-  constructor(attrs = {}, children = []) { super({ class: 'wrapper', ...attrs }, children); }
+  constructor(attrs = {}, children = []) {
+    super({ class: 'wrapper', ...attrs }, children);
+  }
 }
 
 class AdminLTENavbar extends Nav {
@@ -326,9 +480,7 @@ class AdminLTENavbar extends Nav {
     super({ class: 'main-header navbar navbar-expand navbar-white navbar-light', role: 'navigation', ...attrs }, children);
   }
   addLeftToggleButton() {
-    // AdminLTE 4 uses data-lte-toggle="sidebar"
-    const btn = new A({ href: '#', class: 'nav-link', 'data-lte-toggle': 'sidebar', role: 'button' })
-      .addRawHtml('<i class="fas fa-bars"></i>');
+    const btn = new A({ href: '#', class: 'nav-link', 'data-widget': 'pushmenu', role: 'button' }).addRawHtml('<i class="fas fa-bars"></i>');
     this.addChild(new Div({ class: 'navbar-nav' }).addChild(btn));
     return this;
   }
@@ -349,17 +501,21 @@ class AdminLTESidebar extends Aside {
     this._sidebarContent.addChild(up);
     return this;
   }
-  // optional; structure differs in AdminLTE 4, but keeping as utility hook
   addSearch(formHtml) {
     const form = new Div({ class: 'form-inline' }).addRawHtml(formHtml || '');
     this._sidebarContent.addChild(form);
     return this;
   }
-  addMenu(menuEl) { this._sidebarContent.addChild(menuEl); return this; }
+  addMenu(menuEl) {
+    this._sidebarContent.addChild(menuEl);
+    return this;
+  }
 }
 
 class AdminLTEContentWrapper extends Div {
-  constructor(attrs = {}, children = []) { super({ class: 'content-wrapper', ...attrs }, children); }
+  constructor(attrs = {}, children = []) {
+    super({ class: 'content-wrapper', ...attrs }, children);
+  }
   addContentHeader(title, breadcrumbEl = null) {
     const header = new Div({ class: 'content-header' })
       .addChild(new Div({ class: 'container-fluid' })
@@ -379,7 +535,9 @@ class AdminLTEContentWrapper extends Div {
 }
 
 class AdminLTEFooter extends Footer {
-  constructor(attrs = {}, children = []) { super({ class: 'main-footer', ...attrs }, children); }
+  constructor(attrs = {}, children = []) {
+    super({ class: 'main-footer', ...attrs }, children);
+  }
 }
 
 class AdminLTECard extends Card {
@@ -389,7 +547,9 @@ class AdminLTECard extends Card {
   }
   addTools(html) {
     const lastHeader = this.children.find(c => c.attrs && c.attrs.class && c.attrs.class.includes('card-header'));
-    if (lastHeader) lastHeader.addRawHtml(`<div class="card-tools">${html}</div>`);
+    if (lastHeader) {
+      lastHeader.addRawHtml(`<div class="card-tools">${html}</div>`);
+    }
     return this;
   }
 }
@@ -408,12 +568,9 @@ class AdminLTEInfoBox extends Div {
 class AdminLTESmallBox extends Div {
   constructor(number, text, iconClass = 'fa fa-chart-pie', bg = 'info', linkHref = '#', attrs = {}) {
     super({ class: `small-box bg-${bg}`, ...attrs });
-    const inner = new Div({ class: 'inner' })
-      .addChild(new H3().addText(String(number)))
-      .addChild(new P().addText(text));
+    const inner = new Div({ class: 'inner' }).addChild(new H3().addText(String(number))).addChild(new P().addText(text));
     const icon = new Div({ class: 'icon' }).addRawHtml(`<i class="${iconClass}"></i>`);
-    const link = new A({ href: linkHref, class: 'small-box-footer' })
-      .addRawHtml('More info <i class="fas fa-arrow-circle-right"></i>');
+    const link = new A({ href: linkHref, class: 'small-box-footer' }).addRawHtml('More info <i class="fas fa-arrow-circle-right"></i>');
     this.addChild(inner).addChild(icon).addChild(link);
   }
 }
@@ -437,11 +594,8 @@ class AdminLTETable extends Table {
 }
 
 function buildAdminBreadcrumb(items = []) {
-  const ol = new Ol({ class: 'breadcrumb float-sm-end' }); // BS5: float-sm-end
-  items.forEach(it => ol.addChild(
-    new Li({ class: 'breadcrumb-item' })
-      .addChild(it.href ? new A({ href: it.href }).addText(it.text) : new Span().addText(it.text))
-  ));
+  const ol = new Ol({ class: 'breadcrumb float-sm-right' });
+  items.forEach(it => ol.addChild(new Li({ class: 'breadcrumb-item' }).addChild(it.href ? new A({ href: it.href }).addText(it.text) : new Span().addText(it.text))));
   return new Div({ class: 'container-fluid' }).addChild(new Div({ class: 'row mb-2' })
     .addChild(new Div({ class: 'col-sm-6' }))
     .addChild(new Div({ class: 'col-sm-6' }).addChild(ol)));
@@ -449,36 +603,33 @@ function buildAdminBreadcrumb(items = []) {
 
 function buildAdminMenu(items = []) {
   const nav = new Nav({ class: 'mt-2' });
-  // AdminLTE 4 treeview works without jQuery; keep simple structure
-  const ul = new Ul({ class: 'nav nav-pills nav-sidebar flex-column', role: 'menu', 'data-accordion': 'false' });
-
+  const ul = new Ul({ class: 'nav nav-pills nav-sidebar flex-column', 'data-widget': 'treeview', role: 'menu', 'data-accordion': 'false' });
   function makeItem(it) {
     const li = new Li({ class: 'nav-item' });
     if (it.children && it.children.length) {
-      const a = new A({ href: '#', class: 'nav-link' })
-        .addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}<i class="right fas fa-angle-left"></i></p>`);
+      const a = new A({ href: '#', class: 'nav-link' }).addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}<i class="right fas fa-angle-left"></i></p>`);
       const innerUl = new Ul({ class: 'nav nav-treeview' });
       it.children.forEach(c => innerUl.addChild(makeItem(c)));
       li.addChild(a).addChild(innerUl);
     } else {
-      const a = new A(
-        { href: it.href || '#', class: `nav-link ${it.active ? 'active' : ''}` }
-      ).addRawHtml(
-        `<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}` +
-        `${it.badge ? `<span class="right badge badge-${it.badge.type || 'danger'}">${it.badge.text}</span>` : ''}</p>`
-      );
+      const a = new A({ href: it.href || '#', class: `nav-link ${it.active ? 'active' : ''}` }).addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}${it.badge ? `<span class=\"right badge badge-${it.badge.type || 'danger'}\">${it.badge.text}</span>` : ''}</p>`);
       li.addChild(a);
     }
     return li;
   }
-
   items.forEach(i => ul.addChild(makeItem(i)));
   nav.addChild(ul);
   return nav;
 }
 
-// AdminLTE 4 no jQuery requirement; keep as optional hook
-function initAdminLTEWidgets() { /* no-op for AdminLTE 4; place custom init here if needed */ }
+function initAdminLTEWidgets() {
+  try {
+    if (typeof window.$ == 'function' && typeof window.$.AdminLTE !== 'undefined') {
+    }
+  } catch (e) {
+    console.warn('initAdminLTEWidgets:', e);
+  }
+}
 
 // --- Helper builders and utilities ---
 function buildListGroup(items, type = 'ul', attrs = {}) {
@@ -488,8 +639,11 @@ function buildListGroup(items, type = 'ul', attrs = {}) {
     if (item.active) itemAttrs.class += ' active';
     if (item.disabled) itemAttrs.class += ' disabled';
     let listItem;
-    if (item.href) listItem = new A({ ...itemAttrs, class: itemAttrs.class + ' list-group-item-action', href: item.href });
-    else listItem = new Li(itemAttrs);
+    if (item.href) {
+      listItem = new A({ ...itemAttrs, class: itemAttrs.class + ' list-group-item-action', href: item.href });
+    } else {
+      listItem = new Li(itemAttrs);
+    }
     listItem.addText(item.text);
     listContainer.addChild(listItem);
   });
@@ -497,14 +651,20 @@ function buildListGroup(items, type = 'ul', attrs = {}) {
 }
 
 function buildTable(headers, rows) {
-  const thead = new Thead().addChild(new Tr().addChild(...headers.map(h => new Th().addText(h))));
+  const thead = new Thead().addChild(
+    new Tr().addChild(...headers.map(h => new Th().addText(h)))
+  );
   const tbody = new Tbody();
-  rows.forEach(row => tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell)))));
+  rows.forEach(row => {
+    tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell))));
+  });
   return new Table({ class: 'table table-bordered' }).addChild(thead).addChild(tbody).toHtml();
 }
 
 function buildAlert(type, message) {
-  return new Div({ class: `alert alert-${type}`, role: 'alert' }).addText(message).toHtml();
+  return new Div({ class: `alert alert-${type}`, role: 'alert' })
+    .addText(message)
+    .toHtml();
 }
 
 function buildForm(fields, submitText = 'Submit') {
@@ -513,9 +673,17 @@ function buildForm(fields, submitText = 'Submit') {
     const group = new Div({ class: 'mb-3' });
     let inputElement;
     if (field.type === 'textarea') {
-      inputElement = new Textarea({ class: 'form-control', id: field.id, placeholder: field.placeholder || '' });
+      inputElement = new Textarea({
+        class: 'form-control',
+        id: field.id,
+        placeholder: field.placeholder || ''
+      });
     } else {
-      inputElement = new Input(field.type, { class: 'form-control', id: field.id, placeholder: field.placeholder || '' });
+      inputElement = new Input(field.type, {
+        class: 'form-control',
+        id: field.id,
+        placeholder: field.placeholder || ''
+      });
     }
     group.addChild(inputElement);
     form.addChild(group);
@@ -530,16 +698,12 @@ function buildModal(id, title, body) {
       new Div({ class: 'modal-dialog' })
         .addChild(
           new Div({ class: 'modal-content' })
-            .addChild(
-              new Div({ class: 'modal-header' })
-                .addChild(new Div({ class: 'modal-title h5' }).addText(title))
-                .addChild(new Button({ type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' }))
-            )
+            .addChild(new Div({ class: 'modal-header' })
+              .addChild(new Div({ class: 'modal-title h5' }).addText(title))
+              .addChild(new Button({ type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' })))
             .addChild(new Div({ class: 'modal-body' }).addChild(new Div().addText(body)))
-            .addChild(
-              new Div({ class: 'modal-footer' })
-                .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close'))
-            )
+            .addChild(new Div({ class: 'modal-footer' })
+              .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close')))
         )
     ).toHtml();
 }
@@ -547,12 +711,18 @@ function buildModal(id, title, body) {
 function createElement(tag, attrs = {}, children = []) {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
-    if (key === 'class') el.className = value;
-    else el.setAttribute(key, value);
+    if (key === 'class') {
+      el.className = value;
+    } else {
+      el.setAttribute(key, value);
+    }
   }
   children.forEach(child => {
-    if (typeof child === 'string') el.appendChild(document.createTextNode(child));
-    else if (child instanceof Node) el.appendChild(child);
+    if (typeof child === 'string') {
+      el.appendChild(document.createTextNode(child));
+    } else if (child instanceof Node) {
+      el.appendChild(child);
+    }
   });
   return el;
 }
@@ -578,7 +748,9 @@ class DropzoneForm extends Form {
       addRemoveLinks: true,
       ...this.dzOptions
     });
-    if (typeof customInitCallback === "function") customInitCallback(dz);
+    if (typeof customInitCallback === "function") {
+      customInitCallback(dz);
+    }
     this.initialized = true;
     return dz;
   }
@@ -602,8 +774,15 @@ class ProgressBar extends Div {
     this.bar.setAttr('aria-valuenow', clampedValue);
     this.bar.setStyle('width', `${clampedValue}%`);
   }
-  hide() { this.removeClass('show'); this.addClass('hide'); this.update(0); }
-  show() { this.removeClass('hide'); this.addClass('show'); }
+  hide() {
+    this.removeClass('show');
+    this.addClass('hide');
+    this.update(0);
+  }
+  show() {
+    this.removeClass('hide');
+    this.addClass('show');
+  }
 }
 
 class JsGrid extends Div {
@@ -620,7 +799,9 @@ class JsGrid extends Div {
     const gridElement = jQuery(`#${this.id}`);
     if (gridElement.length) {
       gridElement.jsGrid(this.options);
-      if (typeof customInitCallback === 'function') customInitCallback(gridElement);
+      if (typeof customInitCallback === 'function') {
+        customInitCallback(gridElement);
+      }
     } else {
       console.warn(`JsGrid container with ID "${this.id}" not found in the DOM.`);
     }
@@ -636,11 +817,19 @@ class TabulatorTable extends Div {
     this.options = options || {};
     this.tabulator = null;
   }
-  render() { return `<div id="${this.id}" ${this.renderAttrs ? this.renderAttrs() : ''}></div>`; }
+  render() {
+    return `<div id="${this.id}" ${this.renderAttrs()}></div>`;
+  }
   mount() {
     const el = document.getElementById(this.id);
-    if (!el) { console.error(`TabulatorTable.mount(): element #${this.id} not found`); return; }
-    if (typeof Tabulator === 'undefined') { console.error('Tabulator library not found. Please ensure it is loaded.'); return; }
+    if (!el) {
+      console.error(`TabulatorTable.mount(): element #${this.id} not found`);
+      return;
+    }
+    if (typeof Tabulator === 'undefined') {
+      console.error('Tabulator library not found. Please ensure it is loaded.');
+      return;
+    }
     try {
       this.tabulator = new Tabulator(el, {
         data: this.data,
@@ -649,15 +838,67 @@ class TabulatorTable extends Div {
         reactiveData: false,
         ...this.options,
       });
-    } catch (err) { console.error('Failed to create Tabulator instance:', err); }
+    } catch (err) {
+      console.error('Failed to create Tabulator instance:', err);
+    }
   }
-  setData(data = []) { this.data = Array.isArray(data) ? data : []; if (this.tabulator) this.tabulator.setData(this.data); return this; }
-  setColumns(columns = []) { this.columns = Array.isArray(columns) ? columns : []; if (this.tabulator) this.tabulator.setColumns(this.columns); return this; }
-  getInstance() { return this.tabulator; }
-  destroy() { if (this.tabulator) { this.tabulator.destroy(); this.tabulator = null; } }
+  setData(data = []) {
+    this.data = Array.isArray(data) ? data : [];
+    if (this.tabulator) this.tabulator.setData(this.data);
+    return this;
+  }
+  setColumns(columns = []) {
+    this.columns = Array.isArray(columns) ? columns : [];
+    if (this.tabulator) this.tabulator.setColumns(this.columns);
+    return this;
+  }
+  getInstance() {
+    return this.tabulator;
+  }
+  destroy() {
+    if (this.tabulator) {
+      this.tabulator.destroy();
+      this.tabulator = null;
+    }
+  }
 }
 
-/* ==== Embedded Flow.js-lite (API-compatible subset) ==== */
+
+// --- Exporting to global scope ---
+const exports = {
+  // Base classes
+  HtmlElement, HtmlText, HtmlRaw,
+  // Standard HTML elements
+  Label, Strong, I, B, H1, H2, H3, H4, H5, H6,
+  Div, Span, Form, Input, Textarea, Button, P, Img, A,
+  Ul, Li, Ol, Table, Thead, Tbody, Tr, Th, Td,
+  // Bootstrap 5 components
+  Card, Badge, Spinner, Accordion, AccordionItem, AccordionHeader, AccordionBody,
+  buildListGroup,
+  // AdminLTE components
+  loadAdminLTEDeps, AdminLTEWrapper, AdminLTENavbar, AdminLTESidebar, AdminLTEContentWrapper, AdminLTEFooter,
+  AdminLTECard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable,
+  buildAdminBreadcrumb, buildAdminMenu, initAdminLTEWidgets,
+  // Helper builders and utilities
+  buildTable, buildAlert, buildForm, buildModal, createElement,
+  // Third-party integrations
+  DropzoneForm, ProgressBar, JsGrid, TabulatorTable
+};
+
+for (const key in exports) {
+  if (exports.hasOwnProperty(key)) {
+    window[key] = exports[key];
+  }
+}
+
+
+
+/* ==== Embedded Flow.js-lite (API-compatible subset) ====
+   Note: This is a lightweight, inlined implementation inspired by flowjs/flow.js.
+   It aims to be wire-compatible with the standard Flow.js protocol (chunk params)
+   and provides: chunked uploads, pause/resume, progress, cancel, drop/browse.
+   If you need 100% feature parity, swap this block with the official source.
+*/
 (function(global){
   function EventEmitter(){ this._events = {}; }
   EventEmitter.prototype.on = function(name, fn){ (this._events[name]||(this._events[name]=[])).push(fn); return this; };
@@ -688,6 +929,7 @@ class TabulatorTable extends Div {
     this._completed = false;
     this._errored = false;
     this._progress = 0;
+    // Build chunks
     var chunkSize = flow.opts.chunkSize;
     var offset = 0, index = 0;
     while(offset < this.size){
@@ -703,13 +945,15 @@ class TabulatorTable extends Div {
   FlowFile.prototype.progress = function(){ return this._progress; };
   FlowFile.prototype._recomputeProgress = function(){
     var done = 0;
-    for(var i=0;i<this.chunks.length;i++){ done += this.chunks[i].progress(); }
+    for(var i=0;i<this.chunks.length;i++){
+      done += this.chunks[i].progress();
+    }
     this._progress = done / this.chunks.length;
   };
 
   function FlowChunk(flowFile, index, start, end){
     this.flowFile = flowFile;
-    this.index = index+1; // 1-based
+    this.index = index+1; // 1-based like Flow.js
     this.start = start;
     this.end = end;
     this.size = end - start;
@@ -724,7 +968,9 @@ class TabulatorTable extends Div {
     if(this._error) return 0;
     return this.size ? (this._loaded / this.size) : 0;
   };
-  FlowChunk.prototype.abort = function(){ try{ if(this._xhr) this._xhr.abort(); }catch(e){} };
+  FlowChunk.prototype.abort = function(){
+    try{ if(this._xhr) this._xhr.abort(); }catch(e){}
+  };
   FlowChunk.prototype.send = function(cb){
     var self = this, file = self.flowFile.file, flow = self.flowFile.flow, o = flow.opts;
     var blob = sliceBlob(file, self.start, self.end);
@@ -747,6 +993,7 @@ class TabulatorTable extends Div {
     self._xhr = xhr;
     xhr.open(o.method || 'POST', o.target, true);
 
+    // Headers
     var headers = (typeof o.headers==='function'?o.headers(self):o.headers)||{};
     Object.keys(headers).forEach(k=>xhr.setRequestHeader(k, headers[k]));
 
@@ -764,12 +1011,14 @@ class TabulatorTable extends Div {
           self._success = true;
           self._sent = true;
           flow.emit('chunkSuccess', self.flowFile, self, xhr);
+          // If all chunks success -> fileSuccess
           var allOk = self.flowFile.chunks.every(c=>c._success);
           self.flowFile._recomputeProgress();
           flow.emit('fileProgress', self.flowFile, self);
           if(allOk){
             self.flowFile._completed = true;
             flow.emit('fileSuccess', self.flowFile, xhr);
+            // If all files complete -> complete
             var allFilesOk = flow.files.every(f=>f.isComplete());
             if(allFilesOk) flow.emit('complete');
           }
@@ -859,6 +1108,7 @@ class TabulatorTable extends Div {
     function pump(){
       if(!self._processing) return;
       var inFlight = 0;
+      // Find next chunk to send for any non-paused, non-complete file
       for(var i=0;i<self.files.length;i++){
         var f = self.files[i];
         if(f.isPaused() || f.isComplete()) continue;
@@ -874,6 +1124,7 @@ class TabulatorTable extends Div {
           next = f.chunks.find(c=>!c._sent && !c._success && !c._error);
         }
       }
+      // If nothing in flight and no pending chunks, stop
       var hasPending = self.files.some(f=>f.chunks.some(c=>!c._success && !c._error));
       if(!hasPending && inFlight===0){ self._processing = false; }
     }
@@ -889,9 +1140,13 @@ class TabulatorTable extends Div {
   };
   Flow.prototype.cancel = function(){
     this._processing = false;
-    this.files.forEach(function(f){ f.chunks.forEach(c=>c.abort()); });
+    this.files.forEach(function(f){
+      f.chunks.forEach(c=>c.abort());
+    });
   };
-  Flow.prototype.removeFile = function(flowFile){ this.files = this.files.filter(f=>f!==flowFile); };
+  Flow.prototype.removeFile = function(flowFile){
+    this.files = this.files.filter(f=>f!==flowFile);
+  };
 
   global.Flow = Flow;
 })(window);
@@ -985,7 +1240,9 @@ class HtmlFlowUploader extends HtmlElement {
         <div class="flow-file-size">${(f.size/1024/1024).toFixed(2)} MB</div>
       `;
       li._bar = li.querySelector('.bar');
-      li._update = function(){ li._bar.style.width = Math.round(f.progress()*100) + '%'; };
+      li._update = function(){
+        li._bar.style.width = Math.round(f.progress()*100) + '%';
+      };
       return li;
     };
 
@@ -1014,42 +1271,14 @@ class HtmlFlowUploader extends HtmlElement {
 
     flow.on('fileError', function(file, xhr){
       const node = fileNodes.get(file);
-      if(node){ node.classList.add('error'); }
+      if(node){
+        node.classList.add('error');
+      }
     });
 
     startBtn && startBtn.addEventListener('click', ()=>flow.upload());
     pauseBtn && pauseBtn.addEventListener('click', ()=>flow.pause());
     resumeBtn && resumeBtn.addEventListener('click', ()=>flow.resume());
     cancelBtn && cancelBtn.addEventListener('click', ()=>flow.cancel());
-  }
-}
-
-// --- Exporting to global scope ---
-const exports = {
-  // Base classes
-  HtmlElement, HtmlText, HtmlRaw,
-  // Standard HTML elements
-  Label, Strong, I, B, H1, H2, H3, H4, H5, H6,
-  Div, Span, Form, Input, Textarea, Button, P, Img, A,
-  Ul, Li, Ol, Table, Thead, Tbody, Tr, Th, Td,
-  // Bootstrap 5 components
-  Card, Badge, Spinner, Accordion, AccordionItem, AccordionHeader, AccordionBody,
-  buildListGroup,
-  // AdminLTE 4 components (Bootstrap 5)
-  loadAdminLTE5Deps, loadAdminLTEDeps, // alias retained for back-compat
-  AdminLTEWrapper, AdminLTENavbar, AdminLTESidebar, AdminLTEContentWrapper, AdminLTEFooter,
-  AdminLTECard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable,
-  buildAdminBreadcrumb, buildAdminMenu, initAdminLTEWidgets,
-  // Helper builders and utilities
-  buildTable, buildAlert, buildForm, buildModal, createElement,
-  // Third-party integrations
-  DropzoneForm, ProgressBar, JsGrid, TabulatorTable,
-  // Flow uploader UI
-  HtmlFlowUploader
-};
-
-for (const key in exports) {
-  if (Object.prototype.hasOwnProperty.call(exports, key)) {
-    window[key] = exports[key];
   }
 }
