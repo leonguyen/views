@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>jqWidgets Demo (Html.refactored.fixed.js)</title>
+  <!-- The loader in the JS will inject jQuery and jqWidgets files automatically when you call .init() -->
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; }
+    #myGrid { height: 300px; }
+    #myTabs { margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Demo: jqxTabs + jqxGrid</h2>
+  <div id="myTabs"></div>
+  <div id="myGrid"></div>
+
+  <!-- Load the refactored library (place the JS next to this file when testing locally) -->
+  <script src="/mnt/data/Html.refactored.fixed.js"></script>
+  <script>
+    // Wait until the library has loaded its IIFE and created global classes.
+    (function() {
+      try {
+        // Create Tabs using HtmlElement system
+        const tabs = new JqxTabs('myTabs', { width: '100%', height: 120 });
+        document.body.appendChild(tabs.toHtmlElement());
+        // Init returns a Promise (auto-loads jqWidgets if needed)
+        tabs.init().then(function() {
+          console.log('Tabs initialized');
+          // Add tab items via jqx API (once loaded)
+          const inst = tabs.getInstance();
+          if (inst && inst.length && typeof inst.jqxTabs === 'function') {
+            // jqxTabs expects items as an array of HTML strings or DOM nodes.
+            inst.jqxTabs('addAt', 0, '<div title="Tab1">Tab 1 content</div>');
+            inst.jqxTabs('addAt', 1, '<div title="Tab2">Tab 2 content</div>');
+          }
+        }).catch(console.error);
+
+        // Create Grid container via HtmlElement system
+        const data = [
+          { id: 1, name: 'Alice', age: 30 },
+          { id: 2, name: 'Bob', age: 25 },
+          { id: 3, name: 'Carol', age: 28 }
+        ];
+
+        const source = new (window.jqx ? window.jqx.dataAdapter : (function(){
+          // If jqx.dataAdapter is not present yet, leave adapter creation to init callback below.
+          return function(){};
+        }))({ localdata: data, datatype: 'array' });
+
+        const grid = new JqxGrid('myGrid', {
+          width: '100%',
+          source: { localdata: data, datatype: 'array' },
+          columns: [
+            { text: 'ID', datafield: 'id', width: 50 },
+            { text: 'Name', datafield: 'name' },
+            { text: 'Age', datafield: 'age', width: 80 }
+          ]
+        });
+        document.body.appendChild(grid.toHtmlElement());
+        grid.init().then(function(){ console.log('Grid initialized'); }).catch(console.error);
+      } catch (e) { console.error('Demo error', e); }
+    })();
+  </script>
+</body>
+</html>

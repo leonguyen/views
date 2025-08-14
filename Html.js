@@ -1025,6 +1025,154 @@ class HtmlFlowUploader extends HtmlElement {
 }
 
 // --- Exporting to global scope ---
+// --- jqWidgets Loader + Auto Ensure ---
+(function(){
+  function _injectLink(href){
+    if (document.querySelector(`link[href="${href}"]`)) return Promise.resolve();
+    return new Promise(function(resolve, reject){
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = href;
+      l.onload = () => resolve();
+      l.onerror = () => reject(new Error('Failed to load CSS: ' + href));
+      document.head.appendChild(l);
+    });
+  }
+  function _injectScript(src){
+    if (document.querySelector(`script[src="${src}"]`)) {
+      // If already in DOM, it may still be loading; wait a tick.
+      return Promise.resolve();
+    }
+    return new Promise(function(resolve, reject){
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load JS: ' + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  let _jqwLoadingPromise = null;
+
+  function loadJqWidgetsDeps(theme = 'material'){
+    // Minimal but broadly useful set. You can add more jqx*.js later if needed.
+    const css = [
+      `https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/styles/jqx.base.css`,
+      `https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/styles/jqx.${theme}.css`
+    ];
+    const js = [
+      'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcore.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxdata.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxbuttons.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxscrollbar.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxmenu.js',
+      // Grid
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.sort.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.filter.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.selection.js',
+      // Chart
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxchart.core.js',
+      // Tabs
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxtabs.js',
+      // DateTimeInput (needs calendar + datetimeinput)
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxdatetimeinput.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcalendar.js'
+    ];
+
+    // Load CSS first, then JS in order.
+    const cssP = css.reduce((p, href)=>p.then(()=>_injectLink(href)), Promise.resolve());
+    const jsP = js.reduce((p, src)=>p.then(()=>_injectScript(src)), Promise.resolve());
+    return cssP.then(()=>jsP);
+  }
+
+  function ensureJqWidgetsLoaded(){
+    if (_jqwLoadingPromise) return _jqwLoadingPromise;
+    _jqwLoadingPromise = loadJqWidgetsDeps().then(function(){
+      // Poll until jQuery is available; usually immediate after jquery is loaded.
+      return new Promise(function(resolve){
+        (function waitForJQ(){
+          if (typeof window.jQuery !== 'undefined') resolve();
+          else setTimeout(waitForJQ, 25);
+        })();
+      });
+    });
+    return _jqwLoadingPromise;
+  }
+
+  // --- jqWidgets Base Wrapper ---
+  class JqxWidget extends Div {
+    constructor(id, jqxType, options = {}, attrs = {}) {
+      super({ id, ...attrs });
+      this.id = id;
+      this.jqxType = jqxType; // e.g., 'jqxGrid', 'jqxChart', 'jqxTabs', 'jqxDateTimeInput'
+      this.options = options || {
+  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab};
+      this.instance = null;
+    }
+    init(callback = null) {
+      const runInit = () => {
+        if (typeof jQuery === 'undefined') {
+          console.error('jQuery not available after loading.');
+          return;
+        }
+        const $el = jQuery(`#${this.id}`);
+        const fn = $el[this.jqxType];
+        if (typeof fn !== 'function') {
+          console.error(`jqWidgets plugin "${this.jqxType}" not found. Make sure its script is loaded.`);
+          return;
+        }
+        $el[this.jqxType](this.options);
+        this.instance = $el;
+        if (typeof callback === 'function') callback($el);
+        return $el;
+      };
+
+      // If already loaded, init right away; otherwise autoload then init.
+      if (typeof jQuery !== 'undefined' && typeof jQuery(`#${this.id}`)[this.jqxType] === 'function') {
+        return Promise.resolve(runInit());
+      } else {
+        return ensureJqWidgetsLoaded().then(runInit);
+      }
+    }
+    getInstance(){ return this.instance; }
+    setOptions(opts = {}){
+      this.options = Object.assign({}, this.options, opts);
+      if (this.instance && typeof this.instance[this.jqxType] === 'function') {
+        this.instance[this.jqxType](this.options);
+      }
+      return this;
+    }
+  }
+
+  // --- Specific Wrappers ---
+  class JqxGrid extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxGrid', options, attrs); }
+  }
+  class JqxChart extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxChart', options, attrs); }
+  }
+  class JqxDateTimeInput extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxDateTimeInput', options, attrs); }
+  }
+  class JqxTabs extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxTabs', options, attrs); }
+  }
+  // Alias for user ergonomics (user asked for jqxTab)
+  const JqxTab = JqxTabs;
+
+  // Expose to window now in case exports block below is edited differently.
+  window.loadJqWidgetsDeps = loadJqWidgetsDeps;
+  window.ensureJqWidgetsLoaded = ensureJqWidgetsLoaded;
+  window.JqxWidget = JqxWidget;
+  window.JqxGrid = JqxGrid;
+  window.JqxChart = JqxChart;
+  window.JqxDateTimeInput = JqxDateTimeInput;
+  window.JqxTabs = JqxTabs;
+  window.JqxTab = JqxTab;
+})();
+
 const exports = {
   // Base classes
   HtmlElement, HtmlText, HtmlRaw,
@@ -1045,7 +1193,10 @@ const exports = {
   // Third-party integrations
   DropzoneForm, ProgressBar, JsGrid, TabulatorTable,
   // Flow uploader UI
-  HtmlFlowUploader
+  HtmlFlowUploader,
+
+  // jqWidgets integrations
+  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab,
 };
 
 for (const key in exports) {
