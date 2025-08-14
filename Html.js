@@ -1204,3 +1204,15 @@ for (const key in exports) {
     window[key] = exports[key];
   }
 }
+
+
+// --- Simple Bootstrap 5 NavTabs builder ---
+class NavTabs extends HtmlElement {
+  constructor({id = 'imageTabs', navId = 'imageTabsNav', contentId = 'imageTabsContent'} = {}) {
+    super('div', { id, class: 'mt-4' });
+    const ul = new HtmlElement('ul', { id: navId, class: 'nav nav-tabs flex-nowrap overflow-auto', role: 'tablist', style: 'white-space:nowrap;' });
+    const content = new HtmlElement('div', { id: contentId, class: 'tab-content border border-1 border-top-0 p-3 rounded-bottom' });
+    this.addChildren([ul, content]);
+  }
+}
+window.NavTabs = NavTabs;
