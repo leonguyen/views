@@ -1,0 +1,61 @@
+{
+  "brand": "Generator",
+  "menus": [
+    {
+      "title": "Utilities",
+      "items": [
+        { "name": "W3 Schools", "url": "https://w3schools-hazel.vercel.app/" },
+        { "name": "Web Skill", "url": "https://wsrt.vercel.app/" },
+        { "name": "Clock", "url": "https://clock-ruby.vercel.app/" },
+        { "name": "Calculator", "url": "https://calculator-iota-mocha-45.vercel.app/" },
+        { "name": "Password Generator", "url": "https://password-generator-six-lilac.vercel.app/" },
+        { "name": "Weather", "url": "https://weather-three-mu-66.vercel.app/" },
+        { "name": "Barcode", "url": "https://1190fee2-0cb4-4605-b55d-b1fb34151ef7-00-3n4wsf8dh0dkq.pike.replit.dev" },
+        { "name": "Note", "url": "https://note-two-kohl.vercel.app/" },
+        { "name": "Editor", "url": "https://editor-coral-three.vercel.app/" },
+        { "name": "Form Json Editor", "url": "https://form-json-editor.vercel.app/" },
+        { "name": "Code Editor", "url": "https://code-editor-psi-mauve.vercel.app/" },
+        { "name": "Crop Image", "url": "https://crop-image-lilac.vercel.app/" },
+        { "name": "Merge Image", "url": "https://merge-image-sable.vercel.app/" },
+        { "name": "Image Editor", "url": "https://image-editor-woad-five.vercel.app/" }
+      ]
+    },
+    {
+      "title": "eCom",
+      "items": [
+        { "name": "Uploads Image", "url": "https://upload-image-omega-jade.vercel.app/" },
+        { "name": "Fit Image", "url": "https://fitimage-nam-nguyens-projects-b4a42bf0.vercel.app/" },
+        { "name": "Images Slide", "url": "https://image-slider-chi-eight.vercel.app/" },
+        { "name": "Image File Link", "url": "https://image-file-six.vercel.app/" },
+        { "name": "QR Code", "url": "https://qr-gen-green.vercel.app/" },
+        { "name": "Bootstrap 5 Gen", "url": "https://bootstrap5-woad.vercel.app/" },
+        { "name": "Product List Gen", "url": "https://product-list-gen.vercel.app/" }
+      ]
+    },
+    {
+      "title": "SEO",
+      "items": [
+        { "name": "Backlink", "url": "https://backlink-one.vercel.app/" },
+        { "name": "Redirect", "url": "https://redirect-five-lake.vercel.app/" },
+        { "name": "Referer Traffic", "url": "https://referer-traffic.vercel.app/" },
+        { "name": "Surf Link", "url": "https://surf-link-coral.vercel.app/" }
+      ]
+    },
+    {
+      "title": "UI",
+      "items": [
+        { "name": "Textbox Gen", "url": "https://textbox-gen-phi.vercel.app/" },
+        { "name": "Textarea Gen", "url": "https://textarea-gen.vercel.app/" },
+        { "name": "Checkbox Gen", "url": "https://checkbox-gen.vercel.app/" },
+        { "name": "Radio Gen", "url": "https://radio-gen.vercel.app/" },
+        { "name": "Combobox Gen", "url": "https://combobox-gen.vercel.app/" }
+      ]
+    },
+    {
+      "title": "Code",
+      "items": [
+        { "name": "Template Gen", "url": "https://template-gen.vercel.app/" }
+      ]
+    }
+  ]
+}
