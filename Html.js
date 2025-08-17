@@ -1335,3 +1335,78 @@ function generateEditorHTML({ imageUrl, fileName, sourceFileId }) {
   `;
   return html;
 }
+
+// =========================
+// Progress Modal Component
+// =========================
+
+class ProgressModal {
+  constructor(id = "progressModal", title = "Processing", withSpinner = true) {
+    this.id = id;
+    this.title = title;
+    this.withSpinner = withSpinner;
+    this.progress = 0;
+  }
+
+  setProgress(value) {
+    this.progress = Math.min(100, Math.max(0, value));
+    const bar = document.querySelector(`#${this.id} .progress-bar`);
+    if (bar) {
+      bar.style.width = this.progress + "%";
+      bar.textContent = this.progress + "%";
+    }
+  }
+
+  show() {
+    const modal = new bootstrap.Modal(document.getElementById(this.id), { backdrop: 'static', keyboard: false });
+    modal.show();
+    this.modalInstance = modal;
+  }
+
+  hide() {
+    if (this.modalInstance) this.modalInstance.hide();
+  }
+
+  render() {
+    const modal = new HtmlElement("div", { class: "modal fade", id: this.id, tabindex: "-1" }, [
+      new HtmlElement("div", { class: "modal-dialog modal-dialog-centered" }, [
+        new HtmlElement("div", { class: "modal-content" }, [
+          new HtmlElement("div", { class: "modal-header" }, [
+            new HtmlElement("h5", { class: "modal-title" }).addText(this.title),
+            new HtmlElement("button", { type: "button", class: "btn-close", "data-bs-dismiss": "modal" })
+          ]),
+          new HtmlElement("div", { class: "modal-body text-center" }, [
+            this.withSpinner ? new HtmlElement("div", { class: "mb-3" }, [
+              new HtmlElement("div", { class: "spinner-border text-primary", role: "status" }, [
+                new HtmlElement("span", { class: "visually-hidden" }).addText("Loading...")
+              ])
+            ]) : null,
+            new HtmlElement("div", { class: "progress" }, [
+              new HtmlElement("div", {
+                class: "progress-bar progress-bar-striped progress-bar-animated",
+                role: "progressbar",
+                style: "width: 0%"
+              }).addText("0%")
+            ])
+          ]),
+          new HtmlElement("div", { class: "modal-footer" }, [
+            new HtmlElement("button", { type: "button", class: "btn btn-secondary", "data-bs-dismiss": "modal" }).addText("Close")
+          ])
+        ])
+      ])
+    ]);
+
+    return modal.render();
+  }
+}
+
+// =========================
+// Example Usage
+// =========================
+
+// Inject reusable progress modal into page
+function injectProgressModal() {
+  const modal = new ProgressModal("progressModal", "Uploading Files", true);
+  document.body.insertAdjacentHTML("beforeend", modal.render());
+  return modal;
+}
