@@ -655,16 +655,9 @@ class TabulatorTable extends Div {
   setColumns(columns = []) { this.columns = Array.isArray(columns) ? columns : []; if (this.tabulator) this.tabulator.setColumns(this.columns); return this; }
   getInstance() { return this.tabulator; }
   destroy() { if (this.tabulator) { this.tabulator.destroy(); this.tabulator = null; } }
-  download(format = 'csv', fileName = 'data.csv') {
-    if (this.tabulator) {
-      this.tabulator.download(format, fileName);
-    } else {
-      console.error('Tabulator instance not initialized.');
-    }
-  }
 }
 
-/* ==== Embedded Flow.js-lite (API-compatible subset with download support) ==== */
+/* ==== Embedded Flow.js-lite (API-compatible subset) ==== */
 (function(global){
   function EventEmitter(){ this._events = {}; }
   EventEmitter.prototype.on = function(name, fn){ (this._events[name]||(this._events[name]=[])).push(fn); return this; };
@@ -808,8 +801,7 @@ class TabulatorTable extends Div {
       method: 'POST',
       query: {},
       headers: {},
-      testChunks: false,
-      downloadTarget: '/download'
+      testChunks: false
     }, opts||{});
     this.files = [];
     this._emitter = new EventEmitter();
@@ -900,36 +892,11 @@ class TabulatorTable extends Div {
     this.files.forEach(function(f){ f.chunks.forEach(c=>c.abort()); });
   };
   Flow.prototype.removeFile = function(flowFile){ this.files = this.files.filter(f=>f!==flowFile); };
-  Flow.prototype.download = function(fileIdentifier, fileName, cb){
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', this.opts.downloadTarget + '?identifier=' + encodeURIComponent(fileIdentifier), true);
-    xhr.responseType = 'blob';
-    xhr.onload = function(){
-      if (xhr.status >= 200 && xhr.status < 300) {
-        var blob = xhr.response;
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = fileName || 'download';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        cb && cb(null, blob);
-      } else {
-        cb && cb(new Error('HTTP ' + xhr.status));
-      }
-    };
-    xhr.onerror = function(){
-      cb && cb(new Error('network error'));
-    };
-    xhr.send();
-  };
 
   global.Flow = Flow;
 })(window);
 
-/* ==== HtmlFlowUploader (UI using HtmlElement system with download support) ==== */
+/* ==== HtmlFlowUploader (UI using HtmlElement system) ==== */
 class HtmlFlowUploader extends HtmlElement {
   constructor(options = {}){
     super('div', { class: 'flow-uploader' }, []);
@@ -946,7 +913,6 @@ class HtmlFlowUploader extends HtmlElement {
       pauseText: 'Pause',
       resumeText: 'Resume',
       cancelText: 'Cancel',
-      downloadText: 'Download',
       showList: true
     };
     this.opts = Object.assign({}, defaults, options || {});
@@ -958,7 +924,6 @@ class HtmlFlowUploader extends HtmlElement {
       pause: 'pause-' + Math.random().toString(36).slice(2),
       resume: 'resume-' + Math.random().toString(36).slice(2),
       cancel: 'cancel-' + Math.random().toString(36).slice(2),
-      download: 'download-' + Math.random().toString(36).slice(2),
     };
     this._flow = null;
 
@@ -973,7 +938,6 @@ class HtmlFlowUploader extends HtmlElement {
         new HtmlElement('button', { id: this._ids.pause, type: 'button', class: 'flow-btn-pause' }, [ new HtmlText(this.opts.pauseText) ]),
         new HtmlElement('button', { id: this._ids.resume, type: 'button', class: 'flow-btn-resume' }, [ new HtmlText(this.opts.resumeText) ]),
         new HtmlElement('button', { id: this._ids.cancel, type: 'button', class: 'flow-btn-cancel' }, [ new HtmlText(this.opts.cancelText) ]),
-        new HtmlElement('button', { id: this._ids.download, type: 'button', class: 'flow-btn-download' }, [ new HtmlText(this.opts.downloadText) ])
       ]));
 
     if(this.opts.showList){
@@ -996,11 +960,9 @@ class HtmlFlowUploader extends HtmlElement {
     const pauseBtn = root.querySelector('#'+this._ids.pause);
     const resumeBtn = root.querySelector('#'+this._ids.resume);
     const cancelBtn = root.querySelector('#'+this._ids.cancel);
-    const downloadBtn = root.querySelector('#'+this._ids.download);
 
     const flow = new Flow({
       target: this.opts.target,
-      downloadTarget: this.opts.downloadTarget || '/download',
       singleFile: this.opts.singleFile,
       chunkSize: this.opts.chunkSize,
       simultaneousUploads: this.opts.simultaneousUploads,
@@ -1059,13 +1021,6 @@ class HtmlFlowUploader extends HtmlElement {
     pauseBtn && pauseBtn.addEventListener('click', ()=>flow.pause());
     resumeBtn && resumeBtn.addEventListener('click', ()=>flow.resume());
     cancelBtn && cancelBtn.addEventListener('click', ()=>flow.cancel());
-    downloadBtn && downloadBtn.addEventListener('click', ()=>{
-      flow.files.forEach(f=>{
-        if (f.isComplete()) {
-          flow.download(f.uniqueIdentifier, f.name);
-        }
-      });
-    });
   }
 }
 
@@ -1123,13 +1078,7 @@ class HtmlFlowUploader extends HtmlElement {
       'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxtabs.js',
       // DateTimeInput (needs calendar + datetimeinput)
       'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxdatetimeinput.js',
-      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcalendar.js',
-      // Tree
-      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxpanel.js',
-      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxtree.js',
-      // ComboBox
-      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxlistbox.js',
-      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcombobox.js'
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcalendar.js'
     ];
 
     // Load CSS first, then JS in order.
@@ -1158,7 +1107,8 @@ class HtmlFlowUploader extends HtmlElement {
       super({ id, ...attrs });
       this.id = id;
       this.jqxType = jqxType; // e.g., 'jqxGrid', 'jqxChart', 'jqxTabs', 'jqxDateTimeInput'
-      this.options = options || {};
+      this.options = options || {
+  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab};
       this.instance = null;
     }
     init(callback = null) {
@@ -1211,12 +1161,6 @@ class HtmlFlowUploader extends HtmlElement {
   }
   // Alias for user ergonomics (user asked for jqxTab)
   const JqxTab = JqxTabs;
-  class JqxTree extends JqxWidget {
-    constructor(id, options = {}, attrs = {}) { super(id, 'jqxTree', options, attrs); }
-  }
-  class JqxComboBox extends JqxWidget {
-    constructor(id, options = {}, attrs = {}) { super(id, 'jqxComboBox', options, attrs); }
-  }
 
   // Expose to window now in case exports block below is edited differently.
   window.loadJqWidgetsDeps = loadJqWidgetsDeps;
@@ -1227,8 +1171,6 @@ class HtmlFlowUploader extends HtmlElement {
   window.JqxDateTimeInput = JqxDateTimeInput;
   window.JqxTabs = JqxTabs;
   window.JqxTab = JqxTab;
-  window.JqxTree = JqxTree;
-  window.JqxComboBox = JqxComboBox;
 })();
 
 const exports = {
@@ -1254,7 +1196,7 @@ const exports = {
   HtmlFlowUploader,
 
   // jqWidgets integrations
-  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab, JqxTree, JqxComboBox,
+  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab,
 };
 
 for (const key in exports) {
@@ -1454,7 +1396,7 @@ class ProgressModal {
       ])
     ]);
 
-    return modal.toHtml();
+    return modal.render();
   }
 }
 
