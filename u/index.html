@@ -3,12 +3,412 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>UniversalStorage.js Demo</title>
+  <title>UniversalStorage.js — Integrated (IndexedDB/LocalStorage) + Demo</title>
+  <style>
+    :root{--bg:#ffffff;--fg:#111827;--muted:#6b7280;--card:#f9fafb;--border:#e5e7eb;--accent:#2563eb;--accent-2:#eef2ff}
+    *{box-sizing:border-box} body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";background:var(--bg);color:var(--fg)}
+    header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 16px;font-weight:700}
+    .wrap{max-width:980px;margin:24px auto;padding:0 16px}
+    .grid{display:grid;gap:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    button{border:1px solid var(--border);background:#fff;border-radius:12px;padding:8px 12px;cursor:pointer}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    input,select{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff}
+    code,pre{background:#f3f4f6;border:1px solid var(--border);border-radius:12px;padding:8px}
+    table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--border);background:#fff}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+    th{background:var(--accent-2);text-align:left}
+    tbody tr:last-child td{border-bottom:none}
+    .muted{color:var(--muted)}
+  </style>
 </head>
 <body>
-  <header>UniversalStorage.js Demo</header>
-  <div id="app">Demo UI here</div>
-  <script src="UniversalStorage.js"></script>
-  <script src="demo.js"></script>
+  <header>UniversalStorage.js — Integrated & Reusable (IndexedDB / LocalStorage)</header>
+  <div class="wrap grid">
+    <section class="card">
+      <h2 style="margin:0 0 6px">Library</h2>
+      <p class="muted" style="margin:0 0 12px">Drop-in, chainable storage with tiny ORM-like helpers, a SQL-ish parser, and optional cross-store joins.</p>
+      <details>
+        <summary><strong>How to use</strong></summary>
+        <pre><code>// ESM
+import { UniversalStorage } from './UniversalStorage.js';
+const users = new UniversalStorage({ backend: 'indexeddb', dbName:'AppDB', storeName:'users' });
+await users.init();
+await users.insert({ name:'Alice', age:30 });
+const rows = await users.where('age','>=',18).orderBy('age','desc').get();</code></pre>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <label>Backend
+          <select id="backend">
+            <option value="indexeddb">IndexedDB</option>
+            <option value="localstorage">LocalStorage</option>
+          </select>
+        </label>
+        <label>DB <input id="dbname" value="UniversalDemoDB" /></label>
+        <label>Store <input id="storename" value="people" /></label>
+        <button class="primary" id="init">Init</button>
+        <span class="muted" id="status"></span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="name" placeholder="name" />
+        <input id="age" type="number" placeholder="age" />
+        <button id="add">Insert</button>
+        <button id="seed">Seed 5</button>
+        <button id="clear">Clear Store</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="minAge" type="number" placeholder="min age (whereBetween)"/>
+        <input id="maxAge" type="number" placeholder="max age"/>
+        <button id="runQuery">Run Query</button>
+        <button id="agg">Aggregates</button>
+      </div>
+      <div id="aggOut" class="muted" style="margin-top:8px"></div>
+      <div style="margin-top:12px">
+        <table>
+          <thead><tr><th>id</th><th>name</th><th>age</th><th>actions</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Library: UniversalStorage.js (UMD + ESM) -->
+  <script>
+  (function(global){
+    class UniversalStorage {
+      /**
+       * @param {Object} cfg
+       * @param {'indexeddb'|'localstorage'} [cfg.backend='indexeddb']
+       * @param {string} [cfg.dbName='UniversalDB']
+       * @param {string} [cfg.storeName='DefaultStore']
+       * @param {string} [cfg.idKey='id']
+       * @param {number} [cfg.version=1]
+       */
+      constructor({ backend='indexeddb', dbName='UniversalDB', storeName='DefaultStore', idKey='id', version=1 }={}){
+        this.backend = String(backend || '').toLowerCase();
+        this.dbName = dbName; this.storeName = storeName; this.idKey = idKey; this.version = version;
+        this.db = null; // IDBDatabase when using IndexedDB
+        this._resetQueryState();
+        // join state
+        this.joinStore = null; this.joinOtherId = null; this.joinId = null; this.joinType = 'inner';
+      }
+
+      /** Initialize backend and (optionally) create/upgrade schema. */
+      async init(schemaUpgrade){
+        if(this.backend === 'indexeddb'){
+          return new Promise((resolve,reject)=>{
+            const req = indexedDB.open(this.dbName, this.version);
+            req.onupgradeneeded = (e)=>{
+              const db = e.target.result;
+              if(!db.objectStoreNames.contains(this.storeName)){
+                db.createObjectStore(this.storeName, { keyPath:this.idKey, autoIncrement:true });
+              }
+              if(typeof schemaUpgrade === 'function') schemaUpgrade(db, e.oldVersion, e.newVersion);
+            };
+            req.onsuccess = (e)=>{ this.db = e.target.result; resolve(this); };
+            req.onerror = (e)=> reject(e.target.error || new Error('IndexedDB open error'));
+          });
+        }
+        if(this.backend === 'localstorage'){
+          // Ensure LS key exists
+          this._lsSetAll(this._lsAll());
+          return this;
+        }
+        throw new Error(`Unknown backend: ${this.backend}`);
+      }
+
+      // ---------------- Query Builder ----------------
+      where(field, operator, value){ this.filters.push({field, operator, value, logical:'AND'}); return this; }
+      orWhere(field, operator, value){ this.filters.push({field, operator, value, logical:'OR'}); return this; }
+      whereIn(field, values){ this.filters.push({field, operator:'IN', value:values, logical:'AND'}); return this; }
+      whereBetween(field, min, max){ this.filters.push({field, operator:'BETWEEN', value:[min,max], logical:'AND'}); return this; }
+      whereNull(field){ this.filters.push({field, operator:'IS NULL', value:null, logical:'AND'}); return this; }
+      whereNotNull(field){ this.filters.push({field, operator:'IS NOT NULL', value:null, logical:'AND'}); return this; }
+      whereLike(field, value){ this.filters.push({field, operator:'LIKE', value, logical:'AND'}); return this; }
+      orderBy(field, direction='asc'){ this.sortField=field; this.sortDirection=String(direction).toLowerCase(); return this; }
+      limit(count){ this.limitCount = Number.parseInt(count,10); return this; }
+      paginate(page=1, perPage=10){ this.pageNumber=Number.parseInt(page,10); this.perPageCount=Number.parseInt(perPage,10); return this; }
+
+      // ---------------- CRUD ----------------
+      async insert(data){
+        if(this.backend==='indexeddb'){
+          return new Promise((resolve,reject)=>{
+            const tx = this.db.transaction(this.storeName,'readwrite');
+            const req = tx.objectStore(this.storeName).add(data);
+            req.onsuccess = ()=> resolve({...data, [this.idKey]: req.result});
+            req.onerror = (e)=> reject(e.target.error);
+          });
+        }
+        const all = this._lsAll();
+        const newId = all.length ? Math.max(...all.map(it=>it?.[this.idKey]||0))+1 : 1;
+        const newItem = {...data, [this.idKey]: newId};
+        this._lsSetAll([...all, newItem]);
+        return newItem;
+      }
+
+      async upsert(data){
+        const id = data?.[this.idKey];
+        if(id==null) return this.insert(data);
+        const exists = await this.findById(id);
+        return exists ? this.update(id, data) : this.insert(data);
+      }
+
+      async bulkInsert(items=[]){
+        const out=[]; for(const it of items){ out.push(await this.insert(it)); } return out;
+      }
+
+      async findById(id){ this.where(this.idKey,'===',id); return this.first(); }
+
+      async get(){
+        let results = await this._fetchAll();
+        results = this._applyFilters(results);
+        results = this._applySort(results);
+        results = this._applyLimitAndPagination(results);
+        this._resetQueryState();
+        if(this.joinStore){
+          const joined = await this._performJoin(results);
+          this._clearJoinState();
+          return joined;
+        }
+        return results;
+      }
+
+      async first(){ this.limit(1); const r = await this.get(); return r[0]||null; }
+
+      async update(id, patch){
+        if(this.backend==='indexeddb'){
+          const existing = await this.findById(id); if(!existing) return null;
+          const updated = {...existing, ...patch};
+          return new Promise((resolve,reject)=>{
+            const tx = this.db.transaction(this.storeName,'readwrite');
+            const req = tx.objectStore(this.storeName).put(updated);
+            req.onsuccess = ()=> resolve(updated);
+            req.onerror = (e)=> reject(e.target.error);
+          });
+        }
+        const all = this._lsAll();
+        const idx = all.findIndex(it=> String(it?.[this.idKey]) === String(id));
+        if(idx===-1) return null;
+        const updated = {...all[idx], ...patch};
+        all[idx] = updated; this._lsSetAll(all); return updated;
+      }
+
+      async updateWhere(patch){
+        // use a saved snapshot of current query so we don't lose filters
+        const snapshot = this._saveQuery();
+        const recordsToUpdate = await this.get();
+        this._restoreQuery(snapshot);
+        if(this.backend==='indexeddb'){
+          const tx = this.db.transaction(this.storeName,'readwrite'); const store = tx.objectStore(this.storeName);
+          const ops = recordsToUpdate.map(rec=> new Promise((resolve,reject)=>{
+            const updated = {...rec, ...patch}; const req = store.put(updated);
+            req.onsuccess = ()=> resolve(updated); req.onerror = (e)=> reject(e.target.error);
+          }));
+          return Promise.all(ops);
+        }
+        const all = this._lsAll();
+        const ids = new Set(recordsToUpdate.map(r=>r[this.idKey]));
+        const updated = all.map(r=> ids.has(r[this.idKey]) ? {...r, ...patch} : r);
+        this._lsSetAll(updated); return updated.filter(r=>ids.has(r[this.idKey]));
+      }
+
+      async delete(id){
+        if(this.backend==='indexeddb'){
+          return new Promise((resolve,reject)=>{
+            const tx = this.db.transaction(this.storeName,'readwrite');
+            const req = tx.objectStore(this.storeName).delete(id);
+            req.onsuccess = ()=> resolve(true);
+            req.onerror = (e)=> reject(e.target.error);
+          });
+        }
+        const all = this._lsAll(); const next = all.filter(it=> String(it?.[this.idKey])!==String(id));
+        this._lsSetAll(next); return next.length !== all.length;
+      }
+
+      async deleteWhere(){
+        const snapshot = this._saveQuery();
+        const records = await this.get();
+        this._restoreQuery(snapshot);
+        const ids = new Set(records.map(r=>r[this.idKey]));
+        if(this.backend==='indexeddb'){
+          const tx = this.db.transaction(this.storeName,'readwrite'); const store=tx.objectStore(this.storeName);
+          const ops = [...ids].map(id=> new Promise((resolve,reject)=>{ const req=store.delete(id); req.onsuccess=()=>resolve(true); req.onerror=(e)=>reject(e.target.error);}));
+          await Promise.all(ops); return ids.size;
+        }
+        const all = this._lsAll(); const next = all.filter(r=>!ids.has(r[this.idKey])); this._lsSetAll(next); return ids.size;
+      }
+
+      async clear(){ // drop all records in current store
+        if(this.backend==='indexeddb'){
+          return new Promise((resolve,reject)=>{
+            const tx = this.db.transaction(this.storeName,'readwrite');
+            const req = tx.objectStore(this.storeName).clear();
+            req.onsuccess = ()=> resolve(true); req.onerror = (e)=> reject(e.target.error);
+          });
+        }
+        this._lsSetAll([]); return true;
+      }
+
+      // ---------------- Helpers & Aggregates ----------------
+      async count(){ const r = await this.get(); return r.length; }
+      async exists(){ return (await this.count())>0; }
+      async pluck(field){ const r = await this.get(); return r.map(x=>x?.[field]); }
+      async distinct(field){ const r = await this.get(); return [...new Set(r.map(x=>x?.[field]))]; }
+      async sum(field){ const r = await this.get(); return r.reduce((a,c)=> a + (Number(c?.[field])||0), 0); }
+      async avg(field){ const r = await this.get(); if(!r.length) return 0; const s = await this.sum(field); return s / r.length; }
+      async min(field){ const r = await this.get(); if(!r.length) return null; return r.reduce((m,c)=> Math.min(m, Number(c?.[field] ?? Infinity)), Infinity); }
+      async max(field){ const r = await this.get(); if(!r.length) return null; return r.reduce((m,c)=> Math.max(m, Number(c?.[field] ?? -Infinity)), -Infinity); }
+
+      // ---------------- Joins (experimental) ----------------
+      join(otherStore, otherId, joinId, type='inner'){ this.joinStore=otherStore; this.joinOtherId=otherId; this.joinId=joinId; this.joinType=type; return this; }
+      async _performJoin(primaryData){
+        const secondaryData = await this.joinStore._fetchAll();
+        const out=[]; const pick=(a,b)=>{ const res={}; for(const k in a) res[`${this.storeName}.${k}`]=a[k]; for(const k in (b||{})) res[`${this.joinStore.storeName}.${k}`]=b[k]; return res; };
+        for(const a of primaryData){
+          const matches = secondaryData.filter(b=> b?.[this.joinOtherId] === a?.[this.joinId]);
+          if(this.joinType==='inner'){
+            if(matches.length){ for(const b of matches) out.push(pick(a,b)); }
+          } else { // left
+            if(matches.length){ for(const b of matches) out.push(pick(a,b)); } else { out.push(pick(a,null)); }
+          }
+        }
+        return out;
+      }
+      _clearJoinState(){ this.joinStore=null; this.joinOtherId=null; this.joinId=null; this.joinType='inner'; }
+
+      // ---------------- SQL-like (minimal) ----------------
+      from(storeName){ // inherit config
+        const s = new UniversalStorage({ backend:this.backend, dbName:this.dbName, storeName, idKey:this.idKey, version:this.version });
+        s.db = this.db; // share IDB connection
+        return s;
+      }
+      select(fields='*'){ this.selectFields = fields; return this; }
+
+      async exec(sql){
+        const text = String(sql||'').trim();
+        const [verb, ...rest] = text.split(/\s+/);
+        if(verb.toUpperCase() !== 'SELECT') throw new Error(`Unsupported SQL verb: ${verb}`);
+        const upper = text.toUpperCase();
+        const mFrom = upper.match(/\bFROM\s+([A-Z0-9_.$-]+)/i); if(!mFrom) throw new Error('Missing FROM');
+        const storeName = mFrom[1];
+        const storage = this.from(storeName);
+        const mWhere = text.match(/\bWHERE\s+([\s\S]*?)(ORDER\s+BY|LIMIT|$)/i);
+        if(mWhere){ this._parseWhere(mWhere[1], storage); }
+        const mOrder = text.match(/ORDER\s+BY\s+([A-Z0-9_.$-]+)\s*(ASC|DESC)?/i);
+        if(mOrder){ storage.orderBy(mOrder[1], (mOrder[2]||'asc')); }
+        const mLimit = text.match(/\bLIMIT\s+(\d+)/i);
+        if(mLimit){ storage.limit(parseInt(mLimit[1],10)); }
+        return storage.get();
+      }
+
+      _parseWhere(clause, storage){
+        const parts = clause.split(/(?=\s+OR\s+|\s+AND\s+)/i).map(s=>s.trim()).filter(Boolean);
+        for(const cond of parts){
+          const isOr = /\bOR\b/i.test(cond); const clean = cond.replace(/\b(OR|AND)\b/ig,'').trim();
+          let m;
+          if((m = clean.match(/^([A-Za-z0-9_.$]+)\s*(===|==|=|!=|!==|>|>=|<|<=)\s*(.+)$/))){
+            const [,field,op,valStr] = m; const val = this._parseValue(valStr);
+            (isOr?storage.orWhere:storage.where).call(storage, field, op, val);
+          } else if((m = clean.match(/^([A-Za-z0-9_.$]+)\s+IN\s*\((.+)\)$/))){
+            const [,field,vs] = m; const values = vs.split(',').map(v=> this._parseValue(v.trim())); storage.whereIn(field, values);
+          } else if((m = clean.match(/^([A-Za-z0-9_.$]+)\s+BETWEEN\s+(.+)\s+AND\s+(.+)$/))){
+            const [,field,minS,maxS] = m; storage.whereBetween(field, this._parseValue(minS), this._parseValue(maxS));
+          } else if((m = clean.match(/^([A-Za-z0-9_.$]+)\s+IS\s+NULL$/))){ storage.whereNull(m[1]); }
+          else if((m = clean.match(/^([A-Za-z0-9_.$]+)\s+IS\s+NOT\s+NULL$/))){ storage.whereNotNull(m[1]); }
+          else if((m = clean.match(/^([A-Za-z0-9_.$]+)\s+LIKE\s+'(.+)'$/))){ storage.whereLike(m[1], m[2]); }
+        }
+      }
+
+      _parseValue(v){ const s=String(v).trim(); if(/^'.*'$/.test(s)) return s.slice(1,-1); if(/^(true|false)$/i.test(s)) return s.toLowerCase()==='true'; if(/^null$/i.test(s)) return null; if(!Number.isNaN(+s)) return +s; return s; }
+
+      // ---------------- Internals ----------------
+      _applyFilters(data){
+        return data.filter(item=>{
+          let result=true; let last='AND';
+          for(const f of this.filters){
+            const {field, operator, value, logical} = f; const itemValue = item?.[field];
+            let hit=false;
+            switch(operator){
+              case '===': hit = itemValue === value; break;
+              case '==': case '=': hit = itemValue == value; break;
+              case '!==': hit = itemValue !== value; break;
+              case '!=': hit = itemValue != value; break;
+              case '>': hit = itemValue > value; break;
+              case '>=': hit = itemValue >= value; break;
+              case '<': hit = itemValue < value; break;
+              case '<=': hit = itemValue <= value; break;
+              case 'IN': hit = Array.isArray(value) && value.includes(itemValue); break;
+              case 'BETWEEN': hit = itemValue >= value[0] && itemValue <= value[1]; break;
+              case 'IS NULL': hit = (itemValue===null || itemValue===undefined); break;
+              case 'IS NOT NULL': hit = !(itemValue===null || itemValue===undefined); break;
+              case 'LIKE': hit = (typeof itemValue==='string') && itemValue.includes(value); break;
+            }
+            result = (last==='OR') ? (result || hit) : (result && hit);
+            last = logical;
+          }
+          return result;
+        });
+      }
+
+      _applySort(data){ if(!this.sortField) return data; const f=this.sortField, dir=this.sortDirection==='desc'?-1:1; return [...data].sort((a,b)=> (a?.[f] < b?.[f] ? -1 : a?.[f] > b?.[f] ? 1 : 0) * dir); }
+      _applyLimitAndPagination(data){ let out=data; if(this.pageNumber && this.perPageCount){ const s=(this.pageNumber-1)*this.perPageCount; out = out.slice(s, s+this.perPageCount); } if(Number.isInteger(this.limitCount) && this.limitCount>=0){ out = out.slice(0,this.limitCount); } return out; }
+
+      _saveQuery(){ return { filters:this.filters.map(f=>({...f})), sortField:this.sortField, sortDirection:this.sortDirection, limitCount:this.limitCount, pageNumber:this.pageNumber, perPageCount:this.perPageCount }; }
+      _restoreQuery(s){ this.filters=s.filters.map(f=>({...f})); this.sortField=s.sortField; this.sortDirection=s.sortDirection; this.limitCount=s.limitCount; this.pageNumber=s.pageNumber; this.perPageCount=s.perPageCount; }
+      _resetQueryState(){ this.filters=[]; this.sortField=null; this.sortDirection='asc'; this.limitCount=null; this.pageNumber=null; this.perPageCount=null; }
+
+      async _fetchAll(){ if(this.backend==='indexeddb'){ return new Promise((resolve,reject)=>{ const tx=this.db.transaction(this.storeName,'readonly'); const req=tx.objectStore(this.storeName).getAll(); req.onsuccess=()=>resolve(req.result||[]); req.onerror=(e)=>reject(e.target.error); }); } return this._lsAll(); }
+      _lsKey(){ return `${this.dbName}:${this.storeName}`; }
+      _lsAll(){ try{ return JSON.parse(localStorage.getItem(this._lsKey())||'[]')||[]; }catch{ return []; } }
+      _lsSetAll(arr){ localStorage.setItem(this._lsKey(), JSON.stringify(arr)); }
+    }
+
+    // UMD expose
+    if(typeof module!=="undefined" && module.exports){ module.exports = { UniversalStorage }; }
+    global.UniversalStorage = UniversalStorage;
+    global.UniversalStorageESM = { UniversalStorage };
+  })(typeof window!=='undefined'?window:globalThis);
+  </script>
+
+  <!-- Demo script -->
+  <script>
+    const $ = (sel)=> document.querySelector(sel);
+    let store;
+
+    async function refresh(){
+      if(!store) return; const rows = await store.orderBy('id','asc').get();
+      const tbody = $('#rows'); tbody.innerHTML = '';
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id??''}</td><td>${r.name??''}</td><td>${r.age??''}</td>`+
+          `<td><button data-id="${r.id}" class="edit">+1 age</button> <button data-id="${r.id}" class="del">delete</button></td>`;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll('button.edit').forEach(b=> b.addEventListener('click', async (e)=>{
+        const id = Number(e.currentTarget.getAttribute('data-id')); const rec = await store.findById(id); if(rec){ await store.update(id, { age: Number(rec.age||0)+1 }); await refresh(); }
+      }));
+      tbody.querySelectorAll('button.del').forEach(b=> b.addEventListener('click', async (e)=>{
+        const id = Number(e.currentTarget.getAttribute('data-id')); await store.delete(id); await refresh();
+      }));
+    }
+
+    $('#init').addEventListener('click', async ()=>{
+      const backend = $('#backend').value; const dbName=$('#dbname').value; const storeName=$('#storename').value;
+      store = new window.UniversalStorage({ backend, dbName, storeName }); await store.init();
+      $('#status').textContent = `Ready → ${backend} :: ${dbName}.${storeName}`; await refresh();
+    });
+
+    $('#add').addEventListener('click', async ()=>{ if(!store) return; const name=$('#name').value.trim(); const age=Number($('#age').value||0); if(!name) return; await store.insert({ name, age }); $('#name').value=''; $('#age').value=''; await refresh(); });
+    $('#seed').addEventListener('click', async ()=>{ if(!store) return; const names=['Alice','Bob','Cara','Diego','Eve']; const ages=[19,24,31,28,36]; for(let i=0;i<5;i++) await store.insert({ name:names[i], age:ages[i] }); await refresh(); });
+    $('#clear').addEventListener('click', async ()=>{ if(!store) return; await store.clear(); await refresh(); });
+
+    $('#runQuery').addEventListener('click', async ()=>{ if(!store) return; const min=Number($('#minAge').value||0); const max=Number($('#maxAge').value||150); const rows = await store.whereBetween('age', min, max).orderBy('age','asc').get(); const tbody=$('#rows'); tbody.innerHTML=''; for(const r of rows){ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.id}</td><td>${r.name}</td><td>${r.age}</td><td class="muted">filtered</td>`; tbody.appendChild(tr);} });
+
+    $('#agg').addEventListener('click', async ()=>{ if(!store) return; const c = await store.count(); const s = await store.sum('age'); const a = await store.avg('age'); const min = await store.min('age'); const max = await store.max('age'); $('#aggOut').textContent = `count=${c} | sum(age)=${s} | avg=${a} | min=${min} | max=${max}`; });
+  </script>
 </body>
 </html>
