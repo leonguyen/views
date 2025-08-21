@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UniversalStorage Demo (LocalStorage + IndexedDB)</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    button { margin: 0.25rem; }
+    #log { white-space: pre-wrap; border: 1px solid #ccc; padding: 0.5rem; margin-top: 1rem; height: 250px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>UniversalStorage Demo</h1>
+
+  <div>
+    <h2>LocalStorage Users</h2>
+    <button id="ls-insert">Insert Sample User</button>
+    <button id="ls-show">Show All Users</button>
+    <button id="ls-exportJSON">Export JSON</button>
+    <button id="ls-exportZIP">Export ZIP</button>
+    <input type="file" id="ls-importFile" accept=".json,.zip" />
+  </div>
+
+  <div>
+    <h2>IndexedDB Products</h2>
+    <button id="idb-insert">Insert Sample Product</button>
+    <button id="idb-show">Show All Products</button>
+    <button id="idb-exportJSON">Export JSON</button>
+    <button id="idb-exportZIP">Export ZIP</button>
+    <input type="file" id="idb-importFile" accept=".json,.zip" />
+  </div>
+
+  <div id="log"></div>
+
+  <!-- Dependencies (only needed for ZIP import/export) -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+  <!-- UniversalStorage core (from your rewritten UniversalStorage.v2.js) -->
+  <script src="UniversalStorage.v2.js"></script>
+
+  <script>
+    (async () => {
+      const log = (msg) => {
+        document.querySelector('#log').textContent += msg + "\n";
+      };
+
+      // LocalStorage demo (Users)
+      const users = await storage({ backend: 'localstorage', dbName: 'AppDB', storeName: 'Users' });
+
+      document.querySelector('#ls-insert').onclick = async () => {
+        const id = Math.floor(Math.random() * 1000);
+        await users.insert({ id, name: 'User' + id, role: 'guest' });
+        log(`[LS] Inserted user with id=${id}`);
+      };
+
+      document.querySelector('#ls-show').onclick = async () => {
+        const all = await users.get();
+        log('[LS] Users: ' + JSON.stringify(all, null, 2));
+      };
+
+      document.querySelector('#ls-exportJSON').onclick = async () => {
+        await users.downloadJSON('users.json');
+        log('[LS] Exported JSON file');
+      };
+
+      document.querySelector('#ls-exportZIP').onclick = async () => {
+        await users.downloadZIP('users.zip');
+        log('[LS] Exported ZIP file');
+      };
+
+      document.querySelector('#ls-importFile').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.name.endsWith('.zip')) {
+          await users.importZIP(file, { strategy: 'merge' });
+          log('[LS] Imported from ZIP: ' + file.name);
+        } else if (file.name.endsWith('.json')) {
+          const text = await file.text();
+          await users.importJSON(text, { strategy: 'merge' });
+          log('[LS] Imported from JSON: ' + file.name);
+        }
+        e.target.value = '';
+      };
+
+      // IndexedDB demo (Products)
+      const products = await storage({
+        backend: 'indexeddb',
+        dbName: 'ShopDB',
+        storeName: 'Products',
+        version: 2,
+        schemaUpgrade: (db, oldV, newV) => {
+          if (oldV < 1) {
+            db.createObjectStore('Products', { keyPath: 'id', autoIncrement: true });
+          }
+          if (oldV < 2) {
+            // Add another store in future
+            if (!db.objectStoreNames.contains('Categories')) {
+              db.createObjectStore('Categories', { keyPath: 'id', autoIncrement: true });
+            }
+          }
+        }
+      });
+
+      document.querySelector('#idb-insert').onclick = async () => {
+        const id = Math.floor(Math.random() * 1000);
+        await products.insert({ id, name: 'Product' + id, price: (Math.random()*100).toFixed(2) });
+        log(`[IDB] Inserted product with id=${id}`);
+      };
+
+      document.querySelector('#idb-show').onclick = async () => {
+        const all = await products.get();
+        log('[IDB] Products: ' + JSON.stringify(all, null, 2));
+      };
+
+      document.querySelector('#idb-exportJSON').onclick = async () => {
+        await products.downloadJSON('products.json');
+        log('[IDB] Exported JSON file');
+      };
+
+      document.querySelector('#idb-exportZIP').onclick = async () => {
+        await products.downloadZIP('products.zip');
+        log('[IDB] Exported ZIP file');
+      };
+
+      document.querySelector('#idb-importFile').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.name.endsWith('.zip')) {
+          await products.importZIP(file, { strategy: 'merge' });
+          log('[IDB] Imported from ZIP: ' + file.name);
+        } else if (file.name.endsWith('.json')) {
+          const text = await file.text();
+          await products.importJSON(text, { strategy: 'merge' });
+          log('[IDB] Imported from JSON: ' + file.name);
+        }
+        e.target.value = '';
+      };
+    })();
+  </script>
+</body>
+</html>
