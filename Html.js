@@ -1231,39 +1231,6 @@ class HtmlFlowUploader extends HtmlElement {
   window.JqxComboBox = JqxComboBox;
 })();
 
-const exports = {
-  // Base classes
-  HtmlElement, HtmlText, HtmlRaw,
-  // Standard HTML elements
-  Label, Strong, I, B, H1, H2, H3, H4, H5, H6,
-  Div, Span, Form, Input, Textarea, Button, P, Img, A,
-  Ul, Li, Ol, Table, Thead, Tbody, Tr, Th, Td,
-  // Bootstrap 5 components
-  Card, Badge, Spinner, Accordion, AccordionItem, AccordionHeader, AccordionBody,
-  buildListGroup,
-  // AdminLTE 4 components (Bootstrap 5)
-  loadAdminLTE5Deps, loadAdminLTEDeps, // alias retained for back-compat
-  AdminLTEWrapper, AdminLTENavbar, AdminLTESidebar, AdminLTEContentWrapper, AdminLTEFooter,
-  AdminLTECard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable,
-  buildAdminBreadcrumb, buildAdminMenu, initAdminLTEWidgets,
-  // Helper builders and utilities
-  buildTable, buildAlert, buildForm, buildModal, createElement,
-  // Third-party integrations
-  DropzoneForm, ProgressBar, JsGrid, TabulatorTable,
-  // Flow uploader UI
-  HtmlFlowUploader,
-
-  // jqWidgets integrations
-  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab, JqxTree, JqxComboBox,
-};
-
-for (const key in exports) {
-  if (Object.prototype.hasOwnProperty.call(exports, key)) {
-    window[key] = exports[key];
-  }
-}
-
-
 // --- Simple Bootstrap 5 NavTabs builder ---
 class NavTabs extends HtmlElement {
   constructor({id = 'imageTabs', navId = 'imageTabsNav', contentId = 'imageTabsContent'} = {}) {
@@ -1468,3 +1435,253 @@ function injectProgressModal() {
   document.body.insertAdjacentHTML("beforeend", modal.render());
   return modal;
 }
+
+// ----------------------------------------------------
+// ★ NEW: TOAST UI Image Editor Integration
+// ----------------------------------------------------
+
+// Loader for TUI Image Editor + deps. Safe to call multiple times.
+function loadTuiImageEditorDeps(options = {}) {
+  const {
+    fabricUrl = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js',
+    cssEditor = 'https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.css',
+    cssColorPicker = 'https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.css',
+    jsCodeSnippet = 'https://uicdn.toast.com/tui-code-snippet/latest/tui-code-snippet.js',
+    jsColorPicker = 'https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.js',
+    jsEditor = 'https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.js'
+  } = options;
+
+  function injectLink(href){ if (document.querySelector(`link[href="${href}"]`)) return Promise.resolve(); return new Promise((res,rej)=>{ const l=document.createElement('link'); l.rel='stylesheet'; l.href=href; l.onload=()=>res(); l.onerror=()=>rej(new Error('CSS '+href)); document.head.appendChild(l); }); }
+  function injectScript(src){ if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve(); return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error('JS '+src)); document.body.appendChild(s); }); }
+
+  const cssP = Promise.all([injectLink(cssEditor), injectLink(cssColorPicker)]);
+  // Order matters: code-snippet -> fabric -> color-picker -> image-editor
+  const jsP = cssP
+    .then(()=>injectScript(jsCodeSnippet))
+    .then(()=>injectScript(fabricUrl))
+    .then(()=>injectScript(jsColorPicker))
+    .then(()=>injectScript(jsEditor));
+
+  return jsP.then(()=> {
+    if (!window.tui || !window.tui.ImageEditor) throw new Error('tui ImageEditor not available after load');
+    return window.tui.ImageEditor;
+  });
+}
+
+// Lightweight theme presets (dark/light). You can extend these.
+const TUI_THEMES = {
+  dark: {
+    'menu.backgroundColor': '#1f2937',
+    'common.backgroundColor': '#0b0f19',
+    'downloadButton.backgroundColor': '#2563eb',
+    'downloadButton.borderColor': '#2563eb'
+  },
+  light: {
+    'menu.backgroundColor': '#ffffff',
+    'common.backgroundColor': '#f9fafb',
+    'downloadButton.backgroundColor': '#2563eb',
+    'downloadButton.borderColor': '#2563eb'
+  }
+};
+
+// Reusable Editor wrapper
+class TuiImageEditor extends Div {
+  constructor({ id = uid('tui-editor-'), options = {}, theme = 'dark', height = '600px', includeDefaultUI = true } = {}) {
+    super({ id, class:'tui-editor-container border rounded' });
+    this._id = id;
+    this._height = height;
+    this._includeDefaultUI = includeDefaultUI;
+    this._opts = options || {};
+    this._themeKey = theme;
+    this._instance = null;
+  }
+
+  // Call after element is in DOM
+  async init(depsOptions = {}) {
+    await loadTuiImageEditorDeps(depsOptions);
+    const root = document.getElementById(this._id);
+    if (!root) { console.error(`TuiImageEditor.init(): #${this._id} not found`); return; }
+
+    root.style.height = this._height;
+
+    const themeObj = (typeof this._themeKey === 'string') ? (TUI_THEMES[this._themeKey] || {}) : (this._themeKey || {});
+    const defaultUI = this._includeDefaultUI ? {
+      loadImage: this._opts.loadImage || null,
+      theme: themeObj,
+      menu: ['shape', 'filter', 'text', 'mask', 'icon', 'draw', 'crop', 'flip', 'rotate'],
+      uiSize: { width: '100%', height: this._height },
+      menuBarPosition: 'bottom'
+    } : null;
+
+    const opts = {
+      includeUI: defaultUI,
+      cssMaxWidth: 2000,
+      cssMaxHeight: 2000,
+      selectionStyle: { cornerSize: 20, rotatingPointOffset: 70 },
+      usageStatistics: false,
+      ...this._opts
+    };
+
+    this._instance = new window.tui.ImageEditor(root, opts);
+    return this._instance;
+  }
+
+  getInstance(){ return this._instance; }
+
+  async loadImageFromURL(url, name='image') {
+    if (!this._instance) throw new Error('Editor not initialized');
+    return this._instance.loadImageFromURL(url, name);
+  }
+
+  // Get the edited image as Blob
+  async getBlob(type='image/png', quality=0.92) {
+    if (!this._instance) throw new Error('Editor not initialized');
+    const dataUrl = this._instance.toDataURL({ format: type.includes('jpeg') ? 'jpeg' : (type.includes('webp') ? 'webp' : 'png'), quality });
+    const res = await fetch(dataUrl); return await res.blob();
+  }
+
+  async getDataURL(type='image/png', quality=0.92) {
+    if (!this._instance) throw new Error('Editor not initialized');
+    return this._instance.toDataURL({ format: type.includes('jpeg') ? 'jpeg' : (type.includes('webp') ? 'webp' : 'png'), quality });
+  }
+
+  switchTheme(themeKey='dark') {
+    this._themeKey = themeKey;
+    if (this._instance?.ui?.theme) this._instance.ui.theme.setTheme(TUI_THEMES[themeKey] || {});
+  }
+
+  destroy(){ try { this._instance?.destroy?.(); } catch(e) {} this._instance = null; }
+}
+
+// AdminLTE card wrapper for quick drop-in
+class TuiImageEditorCard extends AdminLTECard {
+  constructor({ title='Image Editor', height='600px', theme='dark', options={}, depsOptions={} } = {}) {
+    super('primary', false, { class:'mb-3' });
+    this.addHeader(title);
+    const editor = new TuiImageEditor({ height, theme, options });
+    this.addBody(editor);
+    this.editor = editor;
+    this._depsOptions = depsOptions;
+  }
+  async mountAndInit(container){
+    const el = this.toHtmlElement();
+    container.appendChild(el);
+    await this.editor.init(this._depsOptions);
+    return this.editor.getInstance();
+  }
+}
+
+// ----------------------------------------------------
+// ★ NEW: Standalone HTML generator with TOAST UI Image Editor
+// Opens a new tab, loads TUI editor, posts back {name,dataUrl,sourceFileId}
+// ----------------------------------------------------
+function generateTuiEditorHTML({ imageUrl, fileName='image.png', sourceFileId='' } = {}) {
+  const escName = (fileName || 'image.png').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const escUrl = (imageUrl || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Edit: ${escName}</title>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.css"/>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.css"/>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column}
+header{padding:10px;border-bottom:1px solid #eee;background:#fafafa}
+#editor{flex:1;min-height:0}
+footer{padding:8px;border-top:1px solid #eee;background:#fbfbfd;display:flex;gap:8px;align-items:center;}
+</style>
+</head>
+<body>
+<header><strong>TOAST UI Image Editor</strong> — ${escName}</header>
+<div id="editor"></div>
+<footer>
+  <button id="closeBtn">Close</button>
+  <div style="flex:1"></div>
+  <button id="exportBtn">Export</button>
+</footer>
+
+<script src="https://uicdn.toast.com/tui-code-snippet/latest/tui-code-snippet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.js"></script>
+<script src="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.js"></script>
+<script>
+(function(){
+  const imageUrl = ${JSON.stringify(escUrl)};
+  const fileName = ${JSON.stringify(escName)};
+  const sourceFileId = ${JSON.stringify(sourceFileId || '')};
+
+  function suggestedName(original, mime){
+    const base=(original||'image'); const parts=base.split('.'); const ext=(parts.length>1?parts.pop():''); const stem=parts.join('.') || 'image';
+    let out='png'; if (mime) { if (mime.includes('jpeg')) out='jpg'; else if (mime.includes('webp')) out='webp'; else if (mime.includes('png')) out='png'; } else if (ext) out=ext;
+    return stem + '_edited.' + out;
+  }
+
+  function boot(){
+    const root = document.getElementById('editor');
+    const height = (window.innerHeight - 100) + 'px';
+    root.style.height = height;
+    const inst = new tui.ImageEditor(root, {
+      includeUI: {
+        loadImage: { path: imageUrl, name: fileName },
+        theme: {},
+        menu: ['shape','filter','text','mask','icon','draw','crop','flip','rotate'],
+        uiSize: { width: '100%', height },
+        menuBarPosition: 'bottom'
+      },
+      cssMaxWidth: 2000, cssMaxHeight: 2000, usageStatistics: false
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', ()=>window.close());
+    document.getElementById('exportBtn').addEventListener('click', async ()=>{
+      try{
+        const dataUrl = inst.toDataURL({ format:'png', quality:0.92 });
+        const mime = (dataUrl.split(';')[0]||'').replace('data:','');
+        const name = suggestedName(fileName, mime);
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({ type:'tui-result', payload:{ name, dataUrl, sourceFileId } }, '*');
+        } else {
+          const a=document.createElement('a'); a.href=dataUrl; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+        }
+      }catch(err){ alert('Export failed: '+(err?.message||err)); }
+    });
+  }
+  if (window.tui?.ImageEditor) boot(); else { window.addEventListener('load', boot); }
+})();
+</script>
+</body></html>`;
+  return html;
+}
+
+// ----------------------------------------------------
+// Exports to window
+// ----------------------------------------------------
+const exportsAll = {
+  // Base + types
+  HtmlElement, HtmlText, HtmlRaw,
+  Label, Strong, I, B, H1, H2, H3, H4, H5, H6,
+  Div, Span, Form, Input, Textarea, Button, P, Img, A, Ul, Li, Ol,
+  Table, Thead, Tbody, Tr, Th, Td, Nav, Aside, Main, Footer,
+  // Bootstrap/AdminLTE
+  Card, Badge, Spinner, Accordion, AccordionItem, AccordionHeader, AccordionBody,
+  loadAdminLTE5Deps, loadAdminLTEDeps,
+  AdminLTEWrapper, AdminLTENavbar, AdminLTESidebar, AdminLTEContentWrapper, AdminLTEFooter,
+  AdminLTECard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable,
+  buildAdminBreadcrumb, buildAdminMenu, initAdminLTEWidgets,
+  // helpers
+  buildListGroup, buildTable, buildAlert, buildForm, buildModal, createElement,
+  // Flow
+  HtmlFlowUploader,
+  // jqWidgets
+  loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab, JqxTree, JqxComboBox,
+  // Tabs
+  NavTabs,
+  // Progress modal
+  ProgressModal, injectProgressModal,
+  // ★ TUI Editor
+  loadTuiImageEditorDeps, TuiImageEditor, TuiImageEditorCard, TUI_THEMES,
+  generateTuiEditorHTML
+};
+for (const k in exportsAll) if (Object.prototype.hasOwnProperty.call(exportsAll, k)) window[k] = exportsAll[k];
