@@ -1,0 +1,86 @@
+classDiagram
+    class Request {
+        +post(url, body, options)
+    }
+
+    class BaseStorage {
+        <<abstract>>
+        +connect()
+        +table(tableName)
+        +schema()
+    }
+
+    class SupabaseStorage {
+        -url: string
+        -key: string
+        +constructor()
+        +connect()
+        +table(tableName)
+        +schema()
+    }
+
+    class LocalUniversalStorage {
+        +constructor()
+        +connect()
+        +table(tableName)
+        +schema()
+        +backup()
+        +restore(blob)
+    }
+    
+    class UnifiedDB {
+        -mode: string
+        -storage: BaseStorage
+        +constructor(mode)
+        +connect()
+        +table(tableName)
+        +schema()
+        +backup()
+        +restore(blob)
+        +switchMode(newMode)
+    }
+
+    class SchemaBuilder {
+        -tableName: string
+        -columns: string[]
+        +constructor(tableName)
+        +increments(column)
+        +string(column, length)
+        +integer(column)
+        +boolean(column)
+        +text(column)
+        +timestamps()
+        +unique(column)
+        +getSQLCreate()
+        +getSQLDrop()
+    }
+
+    class QueryBuilder {
+        -baseUrl: string
+        -apiKey: string
+        -path: string
+        -query: object
+        -body: string
+        -method: string
+        -filters: string[]
+        +constructor()
+        +from(table)
+        +where(column, operator, value)
+        +orWhere(column, operator, value)
+        +limit(count)
+        +offset(count)
+        +select(...columns)
+        +insert(data)
+        +update(data)
+        +delete()
+        +get()
+        -_mapOperator(operator)
+        -_applyFilters()
+    }
+
+    BaseStorage <|-- SupabaseStorage
+    BaseStorage <|-- LocalUniversalStorage
+    UnifiedDB o-- BaseStorage : contains
+    SupabaseStorage o-- SchemaBuilder : creates
+    SupabaseStorage o-- QueryBuilder : creates
+    SupabaseStorage ..> Request
