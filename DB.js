@@ -4,8 +4,10 @@
 // =====================================================================
 // IMPORTANT: Configure your Supabase project details here
 // =====================================================================
-const SUPABASE_URL = 'https://clqvkzwoxlanhjhnmids.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscXZrendveGxhbmhqaG5taWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMTIwNjMsImV4cCI6MjA2OTc4ODA2M30.0K-WhKR-j0n8pYX6KeIVQWoPXRsQad_8vptiKEGHMSo';
+import config from './db.json';
+
+const SUPABASE_URL = config.supabaseUrl;
+const SUPABASE_KEY = config.supabaseKey;
 
 // A simple utility to make HTTP requests
 class Request {
