@@ -20,3 +20,12 @@ const table = new TabulatorTable("userTable",
   [{ title: "ID", field: "id" }, { title: "Name", field: "name" }]
 );
 table.mountWithVan(document.querySelector("#app"));
+
+// Demo: Pintura Editor Card
+(async () => {
+  const pinturaCard = new PinturaEditorCard({
+    title: "Edit Image with Pintura",
+    src: "https://picsum.photos/600/400", // demo image
+  });
+  await pinturaCard.mountWithVan(document.querySelector("#app"));
+})();
