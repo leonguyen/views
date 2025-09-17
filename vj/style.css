@@ -1,0 +1,8 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #f9fafb;
+}
+
+#app > * {
+  margin-bottom: 1.5rem;
+}
