@@ -1,0 +1,51 @@
+/* Custom CSS for Gold Gradient Theme (Embed this in your <style> or a separate file) */
+
+/* Define the bold gold gradient background */
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important; /* Gold to Orange */
+  color: #fff !important;
+  border-color: #FFD700 !important;
+}
+
+/* Card Header for the Gold Title Card */
+.card-header.bg-gold-gradient {
+  border-bottom: 1px solid #FFA500 !important;
+}
+.card-header.bg-gold-gradient .card-title {
+  font-weight: 800; /* Bold title */
+  font-size: 1.25rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Primary Button using the Gold Gradient */
+.btn-primary.bg-gold-gradient,
+.btn-primary.bg-gold-gradient:hover,
+.btn-primary.bg-gold-gradient:focus {
+  background: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%) !important;
+  border-color: #FF9A00 !important;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(255, 165, 0, 0.3) !important;
+}
+
+/* Input, Textarea, and Select Focus Gradient (The "nice light colorful gradient input" effect) */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: #FFD700;
+  box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.4); /* Light gold glow */
+}
+
+/* Active/Selected Tab (Nav-Tabs) Gradient */
+.nav-tabs .nav-link.active {
+  background: linear-gradient(45deg, #FFC720 0%, #FFA500 100%) !important;
+  color: #fff !important;
+  border-color: #FFA500 #FFA500 #ffffff !important; /* Gold border top/sides, white bottom */
+}
+.nav-tabs .nav-link {
+  color: #6c757d; /* Default tab text color */
+}
+
+/* Ensure white background is set for the body */
+body {
+  background-color: #ffffff !important;
+}
