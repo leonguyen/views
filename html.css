@@ -1,21 +1,17 @@
 /*
- * REWRITTEN html.css
- * Merged with style.css and application design principles.
- * Uses style.css's colorful gradients for buttons/tabs/focus
- * while keeping a bold gold gradient for special backgrounds/cards.
+ * REWRITTEN html.css - Focused on BOLD GOLD for Heading and Primary Button
  */
 
 :root {
-  /* Using variables defined in style.css for consistency */
+  /* Using variables defined in style.css for general consistency */
   --gold-gradient: linear-gradient(45deg, #FFD700, #FFA500, #FFC700);
-  --colorful-button-gradient: linear-gradient(45deg, #4CAF50 0%, #8BC34A 100%); /* Green for Success/Primary */
   --colorful-secondary-gradient: linear-gradient(45deg, #03A9F4 0%, #4FC3F7 100%); /* Blue for Secondary/Download */
   --colorful-tab-gradient: linear-gradient(90deg, #90CAF9 0%, #2196F3 100%); /* Light Blue for active tab */
   --input-focus-shadow: rgba(0, 123, 255, 0.25); /* Blue focus glow from style.css */
   --theme-color: #007bff;
 }
 
-/* Ensure white background is set for the body (as in style.css, but explicit here too) */
+/* Ensure white background is set for the body */
 body {
   background-color: #ffffff !important;
 }
@@ -25,70 +21,62 @@ body {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important; /* Gold to Orange */
   color: #fff !important;
   border-color: #FFA500 !important;
-  /* Add a subtle lift and shadow for a "premium" look */
-  box-shadow: 0 5px 15px rgba(255, 165, 0, 0.4);
+  box-shadow: 0 5px 15px rgba(255, 165, 0, 0.5); /* Stronger shadow */
 }
 
-/* Card Header for the Gold Title Card */
+/* --- Card Header: MORE BOLD GOLD HEADING --- */
 .card-header.bg-gold-gradient {
   border-bottom: 2px solid #FFA500 !important;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem; /* Larger padding */
 }
 .card-header.bg-gold-gradient .card-title {
-  font-weight: 800; /* Bold title */
-  font-size: 1.35rem; /* Slightly larger */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 900; /* Extra Bold title */
+  font-size: 1.5rem; /* Significantly larger */
+  letter-spacing: 0.5px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4); /* Deeper shadow for pop */
 }
 
-/* --- Primary Button: Use the colorful green gradient from style.css --- */
+/* --- Primary Button: BOLD GOLD GRADIENT BUTTON (Reverting to original intent) --- */
 .btn-primary,
 .btn-primary:hover,
 .btn-primary:focus {
-  /* Applying style.css's vibrant success/primary gradient */
-  background: var(--colorful-button-gradient) !important;
-  border: none !important;
+  /* Reverting to the bold gold/orange gradient for the primary button */
+  background: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%) !important;
+  border-color: #FF9A00 !important;
   color: white;
-  font-weight: bold;
+  font-weight: 700;
   border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3) !important;
+  box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4) !important; /* Stronger gold shadow */
   transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(45deg, #388E3C 0%, #689F38 100%) !important;
-  box-shadow: 0 6px 15px rgba(76, 175, 80, 0.5) !important;
-  transform: translateY(-1px);
+  background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
+  box-shadow: 0 8px 20px rgba(255, 165, 0, 0.6) !important;
+  transform: translateY(-2px);
 }
 
-/* Fallback for the old specific class, but using the new primary style */
-.btn-primary.bg-gold-gradient {
-  background: var(--colorful-button-gradient) !important;
-  border-color: transparent !important;
-}
-
-/* --- Input, Textarea, and Select Focus (The "nice light colorful gradient input" effect) --- */
+/* --- Input Focus: Using Blue Focus for all inputs (cleaner look) --- */
 .form-control:focus,
 .form-select:focus,
 .form-check-input:focus {
-  /* Using the cleaner blue focus glow from style.css for all inputs */
   border-color: var(--theme-color);
-  box-shadow: 0 0 0 0.25rem var(--input-focus-shadow);
+  box-shadow: 0 0 0 0.25rem var(--input-focus-shadow); /* Light blue glow */
   outline: none;
 }
 
-/* --- Active/Selected Tab (Nav-Tabs): Use the colorful blue gradient from style.css --- */
+/* --- Active/Selected Tab: Using Colorful Blue Gradient --- */
 .nav-tabs .nav-link.active {
-  /* Applying style.css's active tab gradient and styling */
   background: var(--colorful-tab-gradient) !important;
   color: #fff !important;
-  border-color: transparent !important; /* Remove borders on active tab from html.css */
-  border-bottom-color: transparent !important; /* style.css handles the rest of the nav-tabs look */
+  border-color: transparent !important;
+  border-bottom-color: transparent !important;
   font-weight: 700;
   border-radius: 6px 6px 0 0;
   box-shadow: 0 -2px 8px rgba(33, 150, 243, 0.3);
 }
 
 .nav-tabs .nav-link {
-  color: #6c757d; /* Default tab text color (kept from html.css) */
+  color: #6c757d;
   transition: all 0.3s ease;
 }
