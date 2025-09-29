@@ -1,12 +1,14 @@
 /*
- * REWRITTEN html.css - Focused on BOLD GOLD GRADIENT TEXT for Card Title (Vercel Style)
+ * REWRITTEN html.css - Focused on NICE LIGHT COLORFUL GRADIENTS for Bootstrap 5 & AdminLte
  */
 
 :root {
   /* Variables from style.css */
   --gold-gradient: linear-gradient(45deg, #FFD700, #FFA500, #FFC700);
-  --colorful-secondary-gradient: linear-gradient(45deg, #03A9F4 0%, #4FC3F7 100%);
-  --colorful-tab-gradient: linear-gradient(90deg, #90CAF9 0%, #2196F3 100%);
+  --colorful-secondary-gradient: linear-gradient(45deg, #03A9F4 0%, #4FC3F7 100%); /* Light Blue for Secondary/Download */
+  --colorful-tab-gradient: linear-gradient(90deg, #90CAF9 0%, #2196F3 100%); /* Light Blue for active tab */
+  --colorful-light-gradient: linear-gradient(135deg, #e9f8ff 0%, #f7f9fd 100%); /* Very light, subtle background */
+  --colorful-badge-gradient: linear-gradient(45deg, #17a2b8 0%, #20c997 100%); /* Teal/Cyan for Badges/Status */
   --input-focus-shadow: rgba(0, 123, 255, 0.25);
   --theme-color: #007bff;
 }
@@ -16,42 +18,37 @@ body {
   background-color: #ffffff !important;
 }
 
-/* The .bg-gold-gradient class will now be used for a strong *accent* background, not the card header */
+/* --- Core Gold Styles (Kept Bold) --- */
+
+/* Bold Gold Gradient Background Accent */
 .bg-gold-gradient {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
   color: #fff !important;
   border-color: #FFA500 !important;
-  box-shadow: 0 6px 18px rgba(255, 165, 0, 0.5); /* Strong shadow for accent elements */
+  box-shadow: 0 6px 18px rgba(255, 165, 0, 0.5);
 }
 
-/* --- Card Header: Vercel-Style BOLD GOLD GRADIENT TEXT --- */
+/* Vercel-Style BOLD GOLD GRADIENT TEXT for Card Title */
 .card-header {
-  /* Ensure a light background for the card header to let the text shine */
   background-color: #f8f9fa !important;
   border-bottom: 2px solid #e9ecef !important;
   padding: 1.25rem 1.5rem;
 }
-
 .card-header .card-title {
-  /* Apply the Vercel-style Gradient Text effect */
   font-weight: 900;
-  font-size: 1.8rem; /* Even larger for more boldness */
+  font-size: 1.8rem;
   text-align: center;
   letter-spacing: 1px;
-  
-  /* Applying the Gold Gradient Text effect */
   background-image: var(--gold-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text; /* Standard property */
-  text-fill-color: transparent; /* Standard property */
-  
-  /* Subtle text shadow for depth */
+  background-clip: text;
+  text-fill-color: transparent;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   margin: 0;
 }
 
-/* --- Primary Button: BOLD GOLD GRADIENT BUTTON --- */
+/* Primary Button: BOLD GOLD GRADIENT BUTTON */
 .btn-primary,
 .btn-primary:hover,
 .btn-primary:focus {
@@ -63,14 +60,16 @@ body {
   box-shadow: 0 6px 15px rgba(255, 165, 0, 0.4) !important;
   transition: all 0.2s ease;
 }
-
 .btn-primary:hover {
   background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
   box-shadow: 0 8px 20px rgba(255, 165, 0, 0.6) !important;
   transform: translateY(-2px);
 }
 
-/* --- Input Focus: Blue Focus --- */
+
+/* --- Nice Light Colorful Gradient Styles for BS5/AdminLte Components --- */
+
+/* 1. Nice Input Focus (Kept Blue from prior revision/style.css) */
 .form-control:focus,
 .form-select:focus,
 .form-check-input:focus {
@@ -79,7 +78,7 @@ body {
   outline: none;
 }
 
-/* --- Active/Selected Tab: Colorful Blue Gradient --- */
+/* 2. Nav-Tabs Active Link (Kept Blue Gradient from prior revision/style.css) */
 .nav-tabs .nav-link.active {
   background: var(--colorful-tab-gradient) !important;
   color: #fff !important;
@@ -89,8 +88,60 @@ body {
   border-radius: 6px 6px 0 0;
   box-shadow: 0 -2px 8px rgba(33, 150, 243, 0.3);
 }
-
 .nav-tabs .nav-link {
   color: #6c757d;
   transition: all 0.3s ease;
+}
+
+/* 3. Bootstrap Secondary/Info Buttons and Badges (Colorful Gradient) */
+.btn-secondary,
+.btn-info,
+.badge-secondary,
+.badge-info {
+    background: var(--colorful-secondary-gradient) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(3, 169, 244, 0.3);
+    transition: all 0.2s;
+}
+.btn-secondary:hover,
+.btn-info:hover {
+    background: linear-gradient(45deg, #0288D1 0%, #00BCD4 100%) !important;
+    box-shadow: 0 4px 10px rgba(3, 169, 244, 0.5);
+}
+
+/* 4. AdminLte Info Boxes (Light Gradient Background) */
+.info-box,
+.small-box {
+    background: var(--colorful-light-gradient) !important;
+    border: 1px solid #e3f2fd; /* Light blue border */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+.info-box:hover,
+.small-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.1);
+}
+
+/* 5. Pagination Active Item (Colorful Gradient) */
+.pagination .page-item.active .page-link {
+    background: var(--colorful-tab-gradient) !important;
+    border-color: #03A9F4 !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+}
+.pagination .page-link {
+    color: #495057;
+    transition: all 0.2s;
+}
+
+/* 6. Alert Boxes (Light Gradient Background) */
+.alert-info {
+    background: var(--colorful-light-gradient) !important;
+    color: #007bff;
+    border-color: #b3e5fc !important; /* Light border */
+    border-left: 5px solid #03A9F4; /* Stronger accent bar */
 }
