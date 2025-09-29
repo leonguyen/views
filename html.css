@@ -1,5 +1,5 @@
 /*
- * REWRITTEN html.css - Focused on FULL NICE LIGHT COLORFUL GRADIENTS for Bootstrap 5 & AdminLte
+ * REWRITTEN html.css - Focused on BOLD GOLD GRADIENT BACKGROUND for Card Header
  */
 
 :root {
@@ -18,7 +18,7 @@
   
   /* Focus/Shadows */
   --input-focus-shadow: rgba(0, 123, 255, 0.25);
-  --gold-shadow: rgba(255, 165, 0, 0.4);
+  --gold-shadow: rgba(255, 165, 0, 0.5);
 }
 
 /* Ensure white background is set for the body */
@@ -26,9 +26,9 @@ body {
   background-color: #ffffff !important;
 }
 
-/* --- I. Core Gold Styles (Heading & Primary Button) --- */
+/* --- I. Core Gold Styles (Header & Primary Button) --- */
 
-/* Bold Gold Gradient Background Accent */
+/* Bold Gold Gradient Background Accent Class */
 .bg-gold-gradient {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
   color: #fff !important;
@@ -36,24 +36,29 @@ body {
   box-shadow: 0 6px 18px var(--gold-shadow);
 }
 
-/* Vercel-Style BOLD GOLD GRADIENT TEXT for Card Title */
-.card-header {
-  background-color: #f8f9fa !important;
-  border-bottom: 2px solid #e9ecef !important;
+/* 🥇 BOLD GOLD GRADIENT BACKGROUND for Card Header 🥇 */
+.card-header.bg-gold-gradient {
+  /* Apply the gold gradient background */
+  background: var(--gold-gradient) !important;
+  color: white !important; /* Ensure text is readable white */
+  border-bottom: 2px solid #FFA500 !important;
   padding: 1.25rem 1.5rem;
+  /* Add card header-specific shadow */
+  box-shadow: 0 4px 10px rgba(255, 165, 0, 0.3); 
 }
-.card-header .card-title {
+
+/* Card Title inside the Bold Gold Header */
+.card-header.bg-gold-gradient .card-title {
   font-weight: 900;
   font-size: 1.8rem;
   text-align: center;
   letter-spacing: 1px;
-  background-image: var(--gold-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: white !important; /* Ensure the text color is white, overriding any gradient text styles */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4); /* Stronger shadow for pop */
   margin: 0;
+  /* Remove gradient text properties if they were inherited from a global H1 style */
+  -webkit-background-clip: unset !important; 
+  -webkit-text-fill-color: unset !important;
 }
 
 /* Primary Button: BOLD GOLD GRADIENT BUTTON */
@@ -64,7 +69,7 @@ body {
   border-color: #FF9A00 !important;
   color: white;
   font-weight: 700;
-  border-radius: 8px; /* Slightly larger border-radius */
+  border-radius: 8px; 
   box-shadow: 0 8px 20px var(--gold-shadow) !important;
   transition: all 0.2s ease;
 }
@@ -96,7 +101,7 @@ body {
 
 /* --- III. Card & AdminLTE Component Gradients --- */
 
-/* Subtle light gradient for standard Cards */
+/* Subtle light gradient for standard Cards (not using .bg-gold-gradient) */
 .card {
     background: var(--colorful-light-gradient);
     border: 1px solid #e9ecef;
@@ -106,6 +111,12 @@ body {
 }
 .card:hover {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Default card header (non-gold) */
+.card-header {
+    background-color: #f8f9fa;
+    border-radius: 10px 10px 0 0 !important; /* Match card radius */
 }
 
 /* AdminLTE Info Boxes (Small Boxes/Info Boxes) - Use light gradient for body */
@@ -120,7 +131,7 @@ body {
 /* AdminLTE Box Header Gradient Accent (e.g., small-box icon background) */
 .small-box > .inner,
 .info-box-icon {
-    /* Applying the primary gradient for a sharp accent */
+    /* Using the primary gradient for a sharp accent */
     background: var(--grad-primary) !important;
     color: white !important;
 }
@@ -129,7 +140,7 @@ body {
 
 /* Nav-Tabs Active Link (Blue Gradient) */
 .nav-tabs .nav-link.active {
-  background: var(--grad-primary) !important; /* Use Primary for bolder look */
+  background: var(--grad-primary) !important;
   color: #fff !important;
   border-color: transparent !important;
   border-bottom-color: transparent !important;
@@ -144,7 +155,7 @@ body {
 
 /* Alerts: Light Gradient Background with contextual text/border */
 .alert {
-    border-left: 5px solid; /* Use a distinct border bar */
+    border-left: 5px solid; 
     border-radius: 8px;
     background: var(--colorful-light-gradient) !important;
 }
