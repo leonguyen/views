@@ -4,7 +4,8 @@
 
 :root {
   /* Core Gold/Accent Gradients */
-  --gold-gradient: linear-gradient(45deg, #FFD700, #FFA500, #FFC700);
+  --gold-gradient-bg: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); /* Gold to Orange for backgrounds */
+  --gold-gradient-button: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%); /* Gold to Orange for buttons */
   
   /* Colorful Contextual Gradients */
   --grad-primary: linear-gradient(45deg, #007bff 0%, #0056b3 100%);      /* Blue */
@@ -18,7 +19,7 @@
   
   /* Focus/Shadows */
   --input-focus-shadow: rgba(0, 123, 255, 0.25);
-  --gold-shadow: rgba(255, 165, 0, 0.5);
+  --gold-shadow: rgba(255, 165, 0, 0.4);
 }
 
 /* Ensure white background is set for the body */
@@ -26,82 +27,47 @@ body {
   background-color: #ffffff !important;
 }
 
-/* --- I. Core Gold Styles (Header & Primary Button) --- */
+/* --- I. BOLD GOLD CARD HEADER BACKGROUND (Bootstrap 5/AdminLTE) --- */
 
-/* Bold Gold Gradient Background Accent Class */
-.bg-gold-gradient {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
-  color: #fff !important;
-  border-color: #FFA500 !important;
-  box-shadow: 0 6px 18px var(--gold-shadow);
+/* Standard Card Header (without .bg-gold-gradient) remains light */
+.card-header {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef !important;
+  padding: 1rem 1.25rem;
 }
-
-/* 🥇 BOLD GOLD GRADIENT BACKGROUND for Card Header 🥇 */
-.card-header.bg-gold-gradient {
-  /* Apply the gold gradient background */
-  background: var(--gold-gradient) !important;
-  color: white !important; /* Ensure text is readable white */
-  border-bottom: 2px solid #FFA500 !important;
-  padding: 1.25rem 1.5rem;
-  /* Add card header-specific shadow */
-  box-shadow: 0 4px 10px rgba(255, 165, 0, 0.3); 
-}
-
-/* Card Title inside the Bold Gold Header */
-.card-header.bg-gold-gradient .card-title {
-  font-weight: 900;
-  font-size: 1.8rem;
-  text-align: center;
-  letter-spacing: 1px;
-  color: white !important; /* Ensure the text color is white, overriding any gradient text styles */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4); /* Stronger shadow for pop */
-  margin: 0;
-  /* Remove gradient text properties if they were inherited from a global H1 style */
-  -webkit-background-clip: unset !important; 
-  -webkit-text-fill-color: unset !important;
-}
-
-/* Primary Button: BOLD GOLD GRADIENT BUTTON */
-.btn-primary,
-.btn-primary:hover,
-.btn-primary:focus {
-  background: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%) !important;
-  border-color: #FF9A00 !important;
-  color: white;
+.card-header .card-title {
   font-weight: 700;
-  border-radius: 8px; 
-  box-shadow: 0 8px 20px var(--gold-shadow) !important;
-  transition: all 0.2s ease;
-}
-.btn-primary:hover {
-  background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
-  box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
-  transform: translateY(-2px);
+  font-size: 1.25rem;
+  margin: 0;
 }
 
-/* --- II. Colorful Gradient Buttons (Bootstrap 5) --- */
-
-.btn-success { background: var(--grad-success) !important; border-color: #1e7e34 !important; color: white !important; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3); }
-.btn-info    { background: var(--grad-info) !important; border-color: #117a8b !important; color: white !important; box-shadow: 0 4px 10px rgba(23, 162, 184, 0.3); }
-.btn-warning { background: var(--grad-warning) !important; border-color: #d39e00 !important; color: #212529 !important; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3); }
-.btn-danger  { background: var(--grad-danger) !important; border-color: #bd2130 !important; color: white !important; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3); }
-.btn-secondary { background: var(--grad-primary) !important; border-color: #0056b3 !important; color: white !important; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); }
-
-/* Apply hover effect universally for gradient buttons */
-.btn:not(.btn-outline-*) {
-    transition: transform 0.2s, box-shadow 0.2s;
-    font-weight: 600;
-    border-radius: 8px;
-}
-.btn:not(.btn-primary):not(.btn-outline-*):hover {
-    transform: translateY(-1px);
-    opacity: 0.9;
+/* BOLD GOLD GRADIENT CARD HEADER */
+.card-header.bg-gold-gradient,
+/* AdminLTE box-header that is part of a gold-themed box */
+.card.bg-gold-gradient .card-header {
+  /* Applying the bold gold gradient background */
+  background: var(--gold-gradient-bg) !important;
+  color: #fff !important; /* White text for contrast */
+  border-bottom: none !important; /* Seamless gradient look */
+  padding: 1.25rem 1.5rem;
+  /* Top corners should match the card body or be rounded */
+  border-radius: 9px 9px 0 0 !important;
+  box-shadow: 0 5px 15px rgba(255, 165, 0, 0.3); /* Subtle gold lift */
 }
 
+/* Text styling inside the gold header */
+.card-header.bg-gold-gradient .card-title,
+.card.bg-gold-gradient .card-header .card-title {
+  font-weight: 900; /* Extra bold text */
+  font-size: 1.5rem;
+  text-align: center;
+  color: #fff !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Shadow for pop */
+}
 
-/* --- III. Card & AdminLTE Component Gradients --- */
+/* --- II. Card & AdminLTE Component Gradients --- */
 
-/* Subtle light gradient for standard Cards (not using .bg-gold-gradient) */
+/* Standard Card Body */
 .card {
     background: var(--colorful-light-gradient);
     border: 1px solid #e9ecef;
@@ -113,13 +79,7 @@ body {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Default card header (non-gold) */
-.card-header {
-    background-color: #f8f9fa;
-    border-radius: 10px 10px 0 0 !important; /* Match card radius */
-}
-
-/* AdminLTE Info Boxes (Small Boxes/Info Boxes) - Use light gradient for body */
+/* AdminLTE Info Boxes (Small Boxes/Info Boxes) */
 .info-box,
 .small-box {
     background: var(--colorful-light-gradient) !important;
@@ -131,31 +91,62 @@ body {
 /* AdminLTE Box Header Gradient Accent (e.g., small-box icon background) */
 .small-box > .inner,
 .info-box-icon {
-    /* Using the primary gradient for a sharp accent */
+    /* Applying the primary gradient for a sharp accent */
     background: var(--grad-primary) !important;
     color: white !important;
 }
 
-/* --- IV. Tabs, Alerts, and Utilities --- */
+/* --- III. Buttons, Tabs, Alerts, and Utilities --- */
+
+/* Primary Button: BOLD GOLD GRADIENT BUTTON */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--gold-gradient-button) !important;
+  border-color: #FF9A00 !important;
+  color: white;
+  font-weight: 700;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px var(--gold-shadow) !important;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
+  box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+/* Contextual Gradient Buttons */
+.btn-success { background: var(--grad-success) !important; border-color: #1e7e34 !important; }
+.btn-info    { background: var(--grad-info) !important; border-color: #117a8b !important; }
+.btn-warning { background: var(--grad-warning) !important; border-color: #d39e00 !important; color: #212529 !important; }
+.btn-danger  { background: var(--grad-danger) !important; border-color: #bd2130 !important; }
+.btn-secondary { background: var(--grad-primary) !important; border-color: #0056b3 !important; }
+
+/* Global Button Styling */
+.btn:not(.btn-outline-*) {
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-weight: 600;
+    border-radius: 8px;
+    color: white; /* Ensure all gradient buttons have white text by default */
+}
+.btn-warning { color: #212529 !important; } /* Exception for warning text */
+.btn:not(.btn-primary):not(.btn-outline-*):hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
 
 /* Nav-Tabs Active Link (Blue Gradient) */
 .nav-tabs .nav-link.active {
   background: var(--grad-primary) !important;
   color: #fff !important;
-  border-color: transparent !important;
-  border-bottom-color: transparent !important;
-  font-weight: 700;
   border-radius: 8px 8px 0 0;
   box-shadow: 0 -2px 10px rgba(0, 123, 255, 0.4);
 }
-.nav-tabs .nav-link {
-  color: #495057;
-  transition: all 0.3s ease;
-}
 
-/* Alerts: Light Gradient Background with contextual text/border */
+/* Alerts: Light Gradient Background */
 .alert {
-    border-left: 5px solid; 
+    border-left: 5px solid;
     border-radius: 8px;
     background: var(--colorful-light-gradient) !important;
 }
