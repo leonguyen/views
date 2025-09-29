@@ -1,40 +1,69 @@
 /*
- * REWRITTEN html.css - FINAL PASS for BOLD GOLD GRADIENT BACKGROUND, Bootstrap 5 & AdminLTE
- * Focus: High specificity to ensure gradient styles are not overridden.
+ * REWRITTEN html.css - FINAL ROBUST VERSION
+ * Focus: High specificity for BOLD GOLD GRADIENT BACKGROUND, Bootstrap 5 & AdminLTE.
  */
 
 :root {
   /* Core Gold/Accent Gradients */
-  --gold-gradient-bg: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); /* Bold Gold for Card Header */
-  --gold-gradient-button: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%); /* Bold Gold for Primary Button */
+  --gold-gradient-bg: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); /* Bold Gold Card Header */
+  --gold-gradient-button: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%); /* Bold Gold Primary Button */
   
-  /* Colorful Contextual Gradients (for Buttons/Tabs/Accents) */
+  /* Colorful Contextual Gradients */
   --grad-primary: linear-gradient(45deg, #007bff 0%, #0056b3 100%);      /* Blue */
   --grad-success: linear-gradient(45deg, #28a745 0%, #1e7e34 100%);      /* Green */
   --grad-info: linear-gradient(45deg, #17a2b8 0%, #117a8b 100%);         /* Cyan */
   --grad-warning: linear-gradient(45deg, #ffc107 0%, #d39e00 100%);      /* Yellow/Orange */
   --grad-danger: linear-gradient(45deg, #dc3545 0%, #bd2130 100%);       /* Red */
   
-  /* Light Gradient Backgrounds for Card/Alert bodies (Nice Light Colorful Gradient) */
-  --colorful-light-gradient: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%); /* Very light blue to white */
+  /* Light Gradient Backgrounds (Nice Light Colorful Gradient) */
+  --colorful-light-gradient: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
   
   /* Focus/Shadows */
   --input-focus-shadow: rgba(0, 123, 255, 0.25);
   --gold-shadow: rgba(255, 165, 0, 0.4);
 }
 
-/* Ensure white background is set for the body */
+/* Base Body Style */
 body {
   background-color: #ffffff !important;
 }
 
 /* ------------------------------------------------------------------- */
-/* I. BOLD GOLD CARD HEADER BACKGROUND (Bootstrap 5 & AdminLTE) */
+/* I. BOLD GOLD CARD HEADER BACKGROUND (FIXED SPECIFICITY) */
 /* ------------------------------------------------------------------- */
 
-/* Standard Card Body Styling (Nice Light Colorful Gradient) */
+/* Apply the gold gradient background with high priority to Bootstrap/AdminLTE headers */
+.card .card-header.bg-gold-card,
+.box .box-header.bg-gold-card,
+.card-header.bg-gold-gradient { /* Fallback for legacy class */
+  background: var(--gold-gradient-bg) !important;
+  color: #fff !important; 
+  border-bottom: none !important;
+  padding: 1.25rem 1.5rem !important;
+  border-radius: 9px 9px 0 0 !important;
+  box-shadow: 0 5px 15px rgba(255, 165, 0, 0.3);
+}
+
+/* Ensure text and icons are white and bold inside the gold header */
+.card-header.bg-gold-card .card-title,
+.box-header.bg-gold-card .box-title,
+.card-header.bg-gold-card *,
+.box-header.bg-gold-card * {
+  font-weight: 900 !important; 
+  font-size: 1.5rem !important;
+  color: #fff !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+.card-header.bg-gold-card .btn, /* Ensure any buttons/icons inside the header are also white */
+.box-header.bg-gold-card .btn {
+  color: #fff !important;
+  opacity: 0.8;
+}
+
+/* Standard Card/Box Styling (Nice Light Colorful Gradient Body) */
 .card,
-.box { /* Targeting both Bootstrap .card and AdminLTE .box */
+.box { 
     background: var(--colorful-light-gradient);
     border: 1px solid #e9ecef;
     border-radius: 10px;
@@ -42,33 +71,7 @@ body {
     transition: all 0.3s ease;
 }
 
-/* BOLD GOLD GRADIENT HEADER */
-.card-header.bg-gold-gradient,
-.card-header.bg-gold-card,
-.box-header.bg-gold-gradient,
-.box-header.bg-gold-card {
-  /* Ensure the gradient is applied with high priority */
-  background: var(--gold-gradient-bg) !important;
-  color: #fff !important; 
-  border-bottom: none !important;
-  padding: 1.25rem 1.5rem !important;
-  border-radius: 9px 9px 0 0 !important; /* Matches card border-radius - 1px */
-  box-shadow: 0 5px 15px rgba(255, 165, 0, 0.3);
-}
-
-/* Text styling inside the gold header */
-.card-header.bg-gold-gradient .card-title,
-.box-header.bg-gold-gradient .box-title,
-.card-header.bg-gold-card .card-title,
-.box-header.bg-gold-card .box-title {
-  font-weight: 900 !important; /* Extra bold text */
-  font-size: 1.5rem !important;
-  color: #fff !important;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-  margin: 0;
-}
-
-/* Standard Card Header (without custom class) remains light */
+/* Standard Card/Box Header (for non-gold cards) */
 .card-header,
 .box-header {
   background-color: #f8f9fa !important;
@@ -77,18 +80,16 @@ body {
 }
 
 /* ------------------------------------------------------------------- */
-/* II. GRADIENT BUTTONS & UI (Colorful Gradients) */
+/* II. GRADIENT BUTTONS & UI */
 /* ------------------------------------------------------------------- */
 
 /* Primary Button: BOLD GOLD GRADIENT BUTTON */
-.btn-primary,
-.btn-primary:hover,
-.btn-primary:focus {
+.btn-primary {
   background: var(--gold-gradient-button) !important;
   border-color: #FF9A00 !important;
-  color: white;
-  font-weight: 700;
-  border-radius: 8px;
+  color: white !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
   box-shadow: 0 8px 20px var(--gold-shadow) !important;
   transition: all 0.2s ease;
 }
@@ -110,28 +111,20 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
     font-weight: 600;
     border-radius: 8px;
-    color: white; 
+    color: white !important; /* Ensure all gradient buttons have white text */
 }
 .btn-warning { color: #212529 !important; } /* Exception for warning text */
 
-/* --- III. AdminLTE Specific Components --- */
 
-/* AdminLTE Info Boxes (Small Boxes/Info Boxes) - Light Gradient Body */
+/* --- III. AdminLTE & Utility Components --- */
+
+/* AdminLTE Info Boxes (Small Boxes/Info Boxes) */
 .info-box,
 .small-box {
     background: var(--colorful-light-gradient) !important;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
-
-/* AdminLTE Box Header Gradient Accent (e.g., small-box icon background) */
-.small-box > .inner,
-.info-box-icon {
-    background: var(--grad-primary) !important;
-    color: white !important;
-}
-
-/* --- IV. Tabs, Alerts, and Inputs --- */
 
 /* Nav-Tabs Active Link (Blue Gradient) */
 .nav-tabs .nav-link.active {
@@ -147,11 +140,6 @@ body {
     border-radius: 8px;
     background: var(--colorful-light-gradient) !important;
 }
-.alert-primary { border-color: #007bff; color: #004085; }
-.alert-success { border-color: #28a745; color: #155724; }
-.alert-info    { border-color: #17a2b8; color: #0c5460; }
-.alert-warning { border-color: #ffc107; color: #856404; }
-.alert-danger  { border-color: #dc3545; color: #721c24; }
 
 /* Input Focus (Nice Light Colorful Gradient Focus) */
 .form-control:focus,
