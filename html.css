@@ -1,5 +1,5 @@
 /*
- * REWRITTEN html.css - Focused on BOLD GOLD for Heading and Primary Button
+ * REWRITTEN html.css - Focused on BOLD GOLD for Heading, Primary Button, and Text Gradient
  */
 
 :root {
@@ -14,6 +14,16 @@
 /* Ensure white background is set for the body */
 body {
   background-color: #ffffff !important;
+}
+
+/* --- BOLD GOLD TEXT GRADIENT CLASS --- */
+.text-gold-gradient {
+  background-image: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #FFD700; /* Fallback color */
+  font-weight: 800; /* Bold by default */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* Define the bold gold gradient background for special elements */
