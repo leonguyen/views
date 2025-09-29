@@ -1,59 +1,6 @@
-// ===== Html.js (Refactor + Full Merge with AdminLTE 4 + Bootstrap 5 + Gold Gradient Theme) =====
+// ===== Html.js (Refactor + Full Merge with AdminLTE 4 + Bootstrap 5) =====
 
-// ----------------------------------------------------
-// Custom Gold Gradient CSS
-// ----------------------------------------------------
-function getCustomGoldGradientCSS() {
-  return `
-    /* Custom CSS for Gold Gradient Theme */
-    .bg-gold-gradient {
-      /* Bold Gold Gradient */
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important; 
-      color: #fff !important;
-      border-color: #FFD700 !important;
-    }
-
-    .card-header.bg-gold-gradient strong {
-      font-weight: 800; /* Bold title */
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn-primary.bg-gold-gradient,
-    .btn-primary.bg-gold-gradient:hover,
-    .btn-primary.bg-gold-gradient:focus {
-      /* Nice Colorful Gradient Button */
-      background: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%) !important;
-      border-color: #FF9A00 !important;
-      font-weight: bold;
-      color: #fff !important;
-    }
-
-    /* Light Colorful Gradient Input Focus */
-    .form-control:focus, 
-    .form-select:focus, 
-    .form-check-input:focus {
-      border-color: #FFD700;
-      box-shadow: 0 0 0 0.25rem rgba(255, 215, 0, 0.4); 
-    }
-    
-    /* Light Colorful Gradient Active Tab */
-    .nav-tabs .nav-link.active {
-      background: linear-gradient(45deg, #FFC720 0%, #FFA500 100%) !important;
-      color: #fff !important;
-      border-color: #FFA500 !important;
-    }
-
-    /* Ensure white background for body */
-    body {
-      background-color: #ffffff !important;
-    }
-  `;
-}
-
-
-// ----------------------------------------------------
 // Composite Pattern Base Class
-// ----------------------------------------------------
 class HtmlElement {
   constructor(tag = null, attrs = {}, children = []) {
     this.tag = tag; // The HTML tag (e.g. div, span)
@@ -83,85 +30,138 @@ class HtmlElement {
 
   // CSS Class utilities
   addClass(className) {
-    const currentClass = this.attrs.class || '';
-    const classes = new Set(currentClass.split(' ').filter(c => c));
-    classes.add(className);
-    this.attrs.class = Array.from(classes).join(' ');
+    const cur = (this.attrs.class || '').split(' ').filter(Boolean);
+    if (!cur.includes(className)) cur.push(className);
+    this.attrs.class = cur.join(' ');
     return this;
   }
   removeClass(className) {
-    const currentClass = this.attrs.class || '';
-    const classes = new Set(currentClass.split(' ').filter(c => c && c !== className));
-    this.attrs.class = Array.from(classes).join(' ');
+    const cur = (this.attrs.class || '').split(' ').filter(Boolean);
+    this.attrs.class = cur.filter(c => c !== className).join(' ');
     return this;
   }
-  hasClass(className) {
-    return (this.attrs.class || '').split(' ').includes(className);
+
+  // Inline style (use sparingly, prefer Bootstrap classes)
+  setStyle(key, value) {
+    const styleObj = this._parseStyle(this.attrs.style || '');
+    styleObj[key] = value;
+    this.attrs.style = this._stringifyStyle(styleObj);
+    return this;
+  }
+  _parseStyle(style = '') {
+    return style.split(';')
+      .filter(Boolean)
+      .map(s => s.split(':').map(x => x.trim()))
+      .reduce((acc, [k, v]) => (k ? { ...acc, [k]: v } : acc), {});
+  }
+  _stringifyStyle(styleObj) {
+    return Object.entries(styleObj)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('; ');
   }
 
-  // Rendering
-  _renderAttrs() {
-    return Object.entries(this.attrs)
-      .map(([key, value]) => `${key}="${String(value).replace(/"/g, '&quot;')}"`)
+  // Event handler attributes
+  setEvent(event, handler) { this.attrs['on' + event] = handler; return this; }
+  removeEvent(event) { delete this.attrs['on' + event]; return this; }
+
+  // Rendering to HTML (Composite)
+  toHtml() {
+    if (!this.tag) return this.children.map(c => c.toHtml()).join('');
+
+    const voidTags = new Set([
+      'img', 'input', 'br', 'hr', 'meta', 'link', 'base', 'area', 'col', 'embed', 'source',
+      'track', 'wbr'
+    ]);
+
+    const attrs = Object.entries(this.attrs)
+      .map(([k, v]) =>
+        v === true ? k :
+        v === false || v == null ? '' :
+        `${k}="${HtmlElement.escapeAttr(v)}"`
+      )
+      .filter(Boolean)
       .join(' ');
+
+    const markupOpen = `<${this.tag}${attrs ? ' ' + attrs : ''}>`;
+    if (voidTags.has(this.tag)) return markupOpen;
+
+    return `${markupOpen}${this.children.map(c => c.toHtml()).join('')}</${this.tag}>`;
   }
 
-  _renderChildren() {
-    return this.children.map(child => child.render()).join('');
+  // Convert to real DOM
+  toHtmlElement() {
+    if (!this.tag) {
+      const fragment = document.createDocumentFragment();
+      this.children.forEach(child => {
+        const el = child.toHtmlElement();
+        if (el) fragment.appendChild(el);
+      });
+      return fragment;
+    }
+
+    const element = document.createElement(this.tag);
+
+    for (const key in this.attrs) {
+      if (!Object.prototype.hasOwnProperty.call(this.attrs, key)) continue;
+      const value = this.attrs[key];
+
+      if (key === 'class') element.className = value;
+      else if (key === 'id') element.id = value;
+      else if (key === 'data' && typeof value === 'object') {
+        for (const [dataKey, dataValue] of Object.entries(value)) {
+          element.dataset[dataKey] = dataValue;
+        }
+      } else if (value === true) {
+        element.setAttribute(key, '');
+      } else if (value !== false && value !== null && value !== undefined) {
+        element.setAttribute(key, value);
+      }
+    }
+
+    this.children.forEach(child => {
+      const childElement = child.toHtmlElement();
+      if (childElement) element.appendChild(childElement);
+    });
+
+    return element;
   }
 
-  render() {
-    if (!this.tag) return this._renderChildren(); // Handles fragment/wrapper
-    const attrsStr = this._renderAttrs();
-    return `<${this.tag}${attrsStr ? ' ' + attrsStr : ''}>${this._renderChildren()}</${this.tag}>`;
+  toString() { return this.toHtml(); }
+
+  // Helpers
+  static escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  static escapeAttr(str) { return HtmlElement.escapeHtml(str).replace(/"/g, '&quot;'); }
+}
+
+// Leaf node for plain text
+class HtmlText {
+  constructor(text) { this.text = text; }
+  toHtml() { return HtmlElement.escapeHtml(this.text); }
+  toHtmlElement() { return document.createTextNode(this.text); }
+}
+
+// Leaf node for raw HTML
+class HtmlRaw {
+  constructor(html) { this.html = html; }
+  toHtml() { return this.html; }
+  toHtmlElement() {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = this.html;
+    if (tempDiv.children.length === 1) return tempDiv.firstElementChild;
+    const fragment = document.createDocumentFragment();
+    while (tempDiv.firstChild) fragment.appendChild(tempDiv.firstChild);
+    return fragment;
   }
 }
 
-// ----------------------------------------------------
-// Basic Element Wrappers
-// ----------------------------------------------------
-
-class HtmlText extends HtmlElement {
-  constructor(text) {
-    super(null, {}, []); // No tag, no attrs
-    this.text = text;
-  }
-  render() {
-    return String(this.text);
-  }
-}
-
-class HtmlRaw extends HtmlElement {
-  constructor(html) {
-    super(null, {}, []); // No tag, no attrs
-    this.html = html;
-  }
-  render() {
-    return String(this.html);
-  }
-}
-
-// Common HTML elements
-class Div extends HtmlElement { constructor(attrs = {}, children = []) { super('div', attrs, children); } }
-class Span extends HtmlElement { constructor(attrs = {}, children = []) { super('span', attrs, children); } }
-class Form extends HtmlElement { constructor(attrs = {}, children = []) { super('form', attrs, children); } }
-class Input extends HtmlElement { constructor(attrs = {}, children = []) { super('input', attrs, children); } }
-class Textarea extends HtmlElement { constructor(attrs = {}, children = []) { super('textarea', attrs, children); } }
-class Button extends HtmlElement { constructor(attrs = {}, children = []) { super('button', attrs, children); } }
-class P extends HtmlElement { constructor(attrs = {}, children = []) { super('p', attrs, children); } }
-class Img extends HtmlElement { constructor(attrs = {}, children = []) { super('img', attrs, children); } }
-class A extends HtmlElement { constructor(attrs = {}, children = []) { super('a', attrs, children); } }
-class Ul extends HtmlElement { constructor(attrs = {}, children = []) { super('ul', attrs, children); } }
-class Li extends HtmlElement { constructor(attrs = {}, children = []) { super('li', attrs, children); } }
-class Ol extends HtmlElement { constructor(attrs = {}, children = []) { super('ol', attrs, children); } }
-class Table extends HtmlElement { constructor(attrs = {}, children = []) { super('table', attrs, children); } }
-class Thead extends HtmlElement { constructor(attrs = {}, children = []) { super('thead', attrs, children); } }
-class Tbody extends HtmlElement { constructor(attrs = {}, children = []) { super('tbody', attrs, children); } }
-class Tr extends HtmlElement { constructor(attrs = {}, children = []) { super('tr', attrs, children); } }
-class Th extends HtmlElement { constructor(attrs = {}, children = []) { super('th', attrs, children); } }
-class Td extends HtmlElement { constructor(attrs = {}, children = []) { super('td', attrs, children); } }
-
-// Typography and Labels
+// --- Semantic element classes ---
 class Label extends HtmlElement { constructor(attrs = {}, children = []) { super('label', attrs, children); } }
 class Strong extends HtmlElement { constructor(attrs = {}, children = []) { super('strong', attrs, children); } }
 class I extends HtmlElement { constructor(attrs = {}, children = []) { super('i', attrs, children); } }
@@ -172,838 +172,1487 @@ class H3 extends HtmlElement { constructor(attrs = {}, children = []) { super('h
 class H4 extends HtmlElement { constructor(attrs = {}, children = []) { super('h4', attrs, children); } }
 class H5 extends HtmlElement { constructor(attrs = {}, children = []) { super('h5', attrs, children); } }
 class H6 extends HtmlElement { constructor(attrs = {}, children = []) { super('h6', attrs, children); } }
-
-// Semantic/Layout
+class Div extends HtmlElement { constructor(attrs = {}, children = []) { super('div', attrs, children); } }
+class Span extends HtmlElement { constructor(attrs = {}, children = []) { super('span', attrs, children); } }
+class Form extends HtmlElement { constructor(attrs = {}, children = []) { super('form', attrs, children); } }
+class Input extends HtmlElement { constructor(type, attrs = {}) { super('input', { type, ...attrs }); } }
+class Textarea extends HtmlElement { constructor(attrs = {}, children = []) { super('textarea', attrs, children); } }
+class Button extends HtmlElement { constructor(attrs = {}, children = []) { super('button', attrs, children); } }
+class P extends HtmlElement { constructor(attrs = {}, children = []) { super('p', attrs, children); } }
+class Img extends HtmlElement { constructor(attrs = {}) { super('img', attrs); } }
+class A extends HtmlElement { constructor(attrs = {}, children = []) { super('a', attrs, children); } }
+class Ul extends HtmlElement { constructor(attrs = {}, children = []) { super('ul', attrs, children); } }
+class Li extends HtmlElement { constructor(attrs = {}, children = []) { super('li', attrs, children); } }
+class Table extends HtmlElement { constructor(attrs = {}, children = []) { super('table', attrs, children); } }
+class Thead extends HtmlElement { constructor(attrs = {}, children = []) { super('thead', attrs, children); } }
+class Tbody extends HtmlElement { constructor(attrs = {}, children = []) { super('tbody', attrs, children); } }
+class Tr extends HtmlElement { constructor(attrs = {}, children = []) { super('tr', attrs, children); } }
+class Th extends HtmlElement { constructor(attrs = {}, children = []) { super('th', attrs, children); } }
+class Td extends HtmlElement { constructor(attrs = {}, children = []) { super('td', attrs, children); } }
 class Nav extends HtmlElement { constructor(attrs = {}, children = []) { super('nav', attrs, children); } }
 class Aside extends HtmlElement { constructor(attrs = {}, children = []) { super('aside', attrs, children); } }
 class Main extends HtmlElement { constructor(attrs = {}, children = []) { super('main', attrs, children); } }
 class Footer extends HtmlElement { constructor(attrs = {}, children = []) { super('footer', attrs, children); } }
+class Ol extends HtmlElement { constructor(attrs = {}, children = []) { super('ol', attrs, children); } }
 
-// ----------------------------------------------------
-// Bootstrap & AdminLTE 5/4 Components
-// ----------------------------------------------------
-
+// --- Bootstrap 5 Component Classes / Helpers ---
 class Card extends Div {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' card' }, children);
-  }
-
+  constructor(attrs = {}, children = []) { super({ class: 'card', ...attrs }, children); }
   addHeader(headerContent) {
     const header = new Div({ class: 'card-header' });
-    if (typeof headerContent === 'string') {
-      header.addChild(new H3({ class: 'card-title' }).addText(headerContent));
-    } else if (headerContent instanceof HtmlElement) {
-      header.addChild(headerContent);
-    }
-    this.children.unshift(header);
+    if (typeof headerContent === 'string') header.addChild(new H3({ class: "card-title mb-0" }).addText(headerContent));
+    else header.addRawHtml(headerContent);
+    this.addChild(header);
     return this;
   }
-  
   addBody(bodyContent) {
     const body = new Div({ class: 'card-body' });
-    if (Array.isArray(bodyContent)) body.addChildren(bodyContent);
-    else body.addChild(bodyContent);
+    if (typeof bodyContent === 'string') body.addRawHtml(bodyContent);
+    else if (bodyContent instanceof HtmlElement) body.addChild(bodyContent);
+    else if (Array.isArray(bodyContent)) {
+      bodyContent.forEach(item => {
+        if (typeof item === 'string') body.addRawHtml(item);
+        else if (item instanceof HtmlElement) body.addChild(item);
+      });
+    }
     this.addChild(body);
+    return this;
+  }
+  addFooter(footerContent) {
+    const footer = new Div({ class: 'card-footer' }).addRawHtml(footerContent);
+    this.addChild(footer);
     return this;
   }
 }
 
 class Badge extends Span {
-  constructor(text, color = 'primary', attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ` badge bg-${color}` });
+  constructor(text, type = 'primary', attrs = {}) {
+    super({ class: `badge bg-${type}`, ...attrs });
     this.addText(text);
   }
 }
 
 class Spinner extends Div {
-  constructor(type = 'border', color = 'primary', attrs = {}) {
-    super({
-      ...attrs,
-      role: 'status',
-      class: (attrs.class || '') + ` spinner-${type} text-${color}`
-    });
-    this.addChild(new Span({ class: 'visually-hidden' }).addText('Loading...'));
+  constructor(type = 'border', color = 'primary', srText = 'Loading...', attrs = {}) {
+    super({ class: `spinner-${type} text-${color}`, role: 'status', ...attrs });
+    this.addChild(new Span({ class: 'visually-hidden' }).addText(srText));
   }
 }
 
-// Accordion
 class Accordion extends Div {
-  constructor(id, attrs = {}, children = []) {
-    super({ ...attrs, id: id, class: (attrs.class || '') + ' accordion' }, children);
+  constructor(id, attrs = {}) { super({ class: 'accordion', id: id, ...attrs }); }
+  addItem(headerContent, bodyContent, expanded = false, itemId = `item-${Math.random().toString(36).substr(2, 9)}`) {
+    const accordionItem = new AccordionItem(this.getAttr('id'), itemId, headerContent, bodyContent, expanded);
+    this.addChild(accordionItem);
+    return this;
   }
 }
-
 class AccordionItem extends Div {
-  constructor(id, parentId, attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' accordion-item' }, children);
-    this.id = id;
-    this.parentId = parentId;
+  constructor(parentId, itemId, headerContent, bodyContent, expanded) {
+    super({ class: 'accordion-item' });
+    this.addChild(new AccordionHeader(parentId, itemId, headerContent, expanded));
+    this.addChild(new AccordionBody(parentId, itemId, bodyContent, expanded));
   }
 }
-
 class AccordionHeader extends H2 {
-  constructor(id, parentId, title, expanded = false, attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ' accordion-header' });
-    const button = new Button({
+  constructor(parentId, itemId, headerContent, expanded) {
+    super({ class: 'accordion-header' });
+    const buttonAttrs = {
+      class: `accordion-button ${expanded ? '' : 'collapsed'}`,
       type: 'button',
-      class: 'accordion-button' + (expanded ? '' : ' collapsed'),
       'data-bs-toggle': 'collapse',
-      'data-bs-target': `#collapse${id}`,
-      'aria-expanded': expanded ? 'true' : 'false',
-      'aria-controls': `collapse${id}`
-    }).addText(title);
-    this.addChild(button);
+      'data-bs-target': `#collapse-${itemId}`,
+      'aria-expanded': expanded,
+      'aria-controls': `collapse-${itemId}`
+    };
+    this.addChild(new Button(buttonAttrs).addRawHtml(headerContent));
   }
 }
-
 class AccordionBody extends Div {
-  constructor(id, parentId, content, expanded = false, attrs = {}) {
+  constructor(parentId, itemId, bodyContent, expanded) {
     super({
-      ...attrs,
-      id: `collapse${id}`,
-      class: 'accordion-collapse collapse' + (expanded ? ' show' : ''),
+      id: `collapse-${itemId}`,
+      class: `accordion-collapse collapse ${expanded ? 'show' : ''}`,
       'data-bs-parent': `#${parentId}`
     });
-    this.addChild(new Div({ class: 'accordion-body' }).addChildren(Array.isArray(content) ? content : [content]));
+    this.addChild(new Div({ class: 'accordion-body' }).addRawHtml(
+      typeof bodyContent === 'string' ? bodyContent :
+      (bodyContent instanceof HtmlElement ? bodyContent.toHtml() : '')
+    ));
   }
 }
 
-// ----------------------------------------------------
-// AdminLTE 4 Components
-// ----------------------------------------------------
+// --- AdminLTE 4 Loader (Bootstrap 5) ---
+function loadAdminLTE5Deps(opts = {}) {
+  const adminlteVersion = opts.adminlteVersion || '4.0.0';
+  const deps = [
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/css/adminlte.min.css`,
+  ];
+  const scripts = [
+    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+    `https://cdn.jsdelivr.net/npm/admin-lte@${adminlteVersion}/dist/js/adminlte.min.js`,
+  ];
+
+  deps.forEach(url => {
+    if (!document.querySelector(`link[href='${url}']`)) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+  });
+  scripts.forEach(url => {
+    if (!document.querySelector(`script[src='${url}']`)) {
+      const s = document.createElement('script');
+      s.src = url;
+      document.head.appendChild(s);
+    }
+  });
+  return { css: deps, js: scripts };
+}
+
+// Back-compat alias (old name -> new loader)
+const loadAdminLTEDeps = loadAdminLTE5Deps;
+
+// --- AdminLTE 4 Components and Widgets ---
+class AdminLTEWrapper extends Div {
+  constructor(attrs = {}, children = []) { super({ class: 'wrapper', ...attrs }, children); }
+}
+
+class AdminLTENavbar extends Nav {
+  constructor(attrs = {}, children = []) {
+    super({ class: 'main-header navbar navbar-expand navbar-white navbar-light', role: 'navigation', ...attrs }, children);
+  }
+  addLeftToggleButton() {
+    // AdminLTE 4 uses data-lte-toggle="sidebar"
+    const btn = new A({ href: '#', class: 'nav-link', 'data-lte-toggle': 'sidebar', role: 'button' })
+      .addRawHtml('<i class="fas fa-bars"></i>');
+    this.addChild(new Div({ class: 'navbar-nav' }).addChild(btn));
+    return this;
+  }
+}
+
+class AdminLTESidebar extends Aside {
+  constructor(brandHtml, attrs = {}, children = []) {
+    super({ class: 'main-sidebar sidebar-dark-primary elevation-4', ...attrs }, children);
+    if (brandHtml) {
+      const brand = new A({ href: '#', class: 'brand-link' }).addRawHtml(brandHtml);
+      this.addChild(brand);
+    }
+    this._sidebarContent = new Div({ class: 'sidebar' });
+    this.addChild(this._sidebarContent);
+  }
+  addUserPanel(html) {
+    const up = new Div({ class: 'user-panel mt-3 pb-3 mb-3 d-flex' }).addRawHtml(html);
+    this._sidebarContent.addChild(up);
+    return this;
+  }
+  // optional; structure differs in AdminLTE 4, but keeping as utility hook
+  addSearch(formHtml) {
+    const form = new Div({ class: 'form-inline' }).addRawHtml(formHtml || '');
+    this._sidebarContent.addChild(form);
+    return this;
+  }
+  addMenu(menuEl) { this._sidebarContent.addChild(menuEl); return this; }
+}
+
+class AdminLTEContentWrapper extends Div {
+  constructor(attrs = {}, children = []) { super({ class: 'content-wrapper', ...attrs }, children); }
+  addContentHeader(title, breadcrumbEl = null) {
+    const header = new Div({ class: 'content-header' })
+      .addChild(new Div({ class: 'container-fluid' })
+        .addChild(new Div({ class: 'row mb-2' })
+          .addChild(new Div({ class: 'col-sm-6' }).addChild(new H3({ class: 'm-0' }).addText(title || '')))
+          .addChild(new Div({ class: 'col-sm-6' }).addChild(breadcrumbEl || new Div()))
+        )
+      );
+    this.addChild(header);
+    return this;
+  }
+  addMainContent(el) {
+    const section = new Div({ class: 'content' }).addChild(new Div({ class: 'container-fluid' }).addChild(el));
+    this.addChild(section);
+    return this;
+  }
+}
+
+class AdminLTEFooter extends Footer {
+  constructor(attrs = {}, children = []) { super({ class: 'main-footer', ...attrs }, children); }
+}
 
 class AdminLTECard extends Card {
-  constructor(color = 'white', outline = false, attrs = {}, children = []) {
-    const baseClasses = 'card' + (outline ? ' card-outline' : '');
-    super({
-      ...attrs,
-      class: (attrs.class || '') + ` ${baseClasses} card-${color}`
-    }, children);
+  constructor(type = 'primary', outline = false, attrs = {}, children = []) {
+    const cls = outline ? `card card-outline card-${type}` : `card card-${type}`;
+    super({ class: cls, ...attrs }, children);
   }
-}
-
-/**
- * NEW: Bold Gold Gradient Title Card
- */
-class AdminLTEGoldCard extends Card { 
-  constructor(title, attrs = {}, children = []) {
-    // White body and outline for clean look
-    super({ ...attrs, class: (attrs.class || '') + ' card card-outline card-light' }); 
-
-    // 1. Gold Gradient Header (Title Card)
-    if (title) {
-      const header = new Div({ class: 'card-header bg-gold-gradient' });
-      
-      let titleContent;
-      if (typeof title === 'string') {
-        // Use Strong for the requested bold title look
-        titleContent = new Strong({ class: "card-title mb-0" }).addText(title);
-      } else if (title instanceof HtmlElement) {
-        titleContent = title;
-      }
-      header.addChild(titleContent);
-      this.addChild(header);
-    }
-
-    // 2. White Body
-    const body = new Div({ class: 'card-body' });
-    if (Array.isArray(children)) {
-      body.addChildren(children);
-    }
-    this.addChild(body);
+  addTools(html) {
+    const lastHeader = this.children.find(c => c.attrs && c.attrs.class && c.attrs.class.includes('card-header'));
+    if (lastHeader) lastHeader.addRawHtml(`<div class="card-tools">${html}</div>`);
+    return this;
   }
 }
 
 class AdminLTEInfoBox extends Div {
-  constructor(color, iconClass, title, text, progress = 0, attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ' info-box' });
-    this.addChild(new Span({ class: `info-box-icon bg-${color} elevation-1` }).addChild(new I({ class: iconClass })));
-    const content = new Div({ class: 'info-box-content' });
-    content.addChild(new Span({ class: 'info-box-text' }).addText(title));
-    content.addChild(new Span({ class: 'info-box-number' }).addText(text));
-    if (progress > 0) {
-      const progressContainer = new Div({ class: 'progress' });
-      progressContainer.addChild(new Div({
-        class: 'progress-bar',
-        style: `width: ${progress}%`
-      }));
-      content.addChild(progressContainer);
-      content.addChild(new Span({ class: 'progress-description' }).addText(`${progress}% Increase in 30 Days`));
-    }
+  constructor(iconClass, text, number, bg = 'info', attrs = {}) {
+    super({ class: 'info-box', ...attrs });
+    this.addChild(new Span({ class: `info-box-icon bg-${bg}` }).addRawHtml(`<i class="${iconClass}"></i>`));
+    const content = new Div({ class: 'info-box-content' })
+      .addChild(new Span({ class: 'info-box-text' }).addText(text))
+      .addChild(new Span({ class: 'info-box-number' }).addText(number));
     this.addChild(content);
   }
 }
 
 class AdminLTESmallBox extends Div {
-  constructor(color, iconClass, title, text, link = '#', attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ` small-box bg-${color}` });
-    const inner = new Div({ class: 'inner' });
-    inner.addChild(new H3().addText(text));
-    inner.addChild(new P().addText(title));
-    const icon = new Div({ class: 'icon' }).addChild(new I({ class: iconClass }));
-    const footer = new A({ href: link, class: 'small-box-footer' }).addText('More info ').addChild(new I({ class: 'fas fa-arrow-circle-right' }));
-    this.addChildren([inner, icon, footer]);
+  constructor(number, text, iconClass = 'fa fa-chart-pie', bg = 'info', linkHref = '#', attrs = {}) {
+    super({ class: `small-box bg-${bg}`, ...attrs });
+    const inner = new Div({ class: 'inner' })
+      .addChild(new H3().addText(String(number)))
+      .addChild(new P().addText(text));
+    const icon = new Div({ class: 'icon' }).addRawHtml(`<i class="${iconClass}"></i>`);
+    const link = new A({ href: linkHref, class: 'small-box-footer' })
+      .addRawHtml('More info <i class="fas fa-arrow-circle-right"></i>');
+    this.addChild(inner).addChild(icon).addChild(link);
   }
 }
 
 class AdminLTECallout extends Div {
-  constructor(color, title, content, attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ` callout callout-${color}` });
-    this.addChild(new H5().addText(title));
-    this.addChildren(Array.isArray(content) ? content : [content]);
+  constructor(title, message, type = 'info', attrs = {}) {
+    super({ class: `callout callout-${type}`, ...attrs });
+    if (title) this.addChild(new H5().addText(title));
+    if (message) this.addChild(new P().addText(message));
   }
 }
 
 class AdminLTETable extends Table {
-  constructor(headers, data = [], bordered = true, hover = true, attrs = {}) {
-    const classes = ['table'];
-    if (bordered) classes.push('table-bordered');
-    if (hover) classes.push('table-hover');
-    super({ ...attrs, class: (attrs.class || '') + ' ' + classes.join(' ') });
-
-    // Thead
-    const thead = new Thead();
-    const trHead = new Tr();
-    headers.forEach(h => trHead.addChild(new Th().addText(h)));
-    thead.addChild(trHead);
-    this.addChild(thead);
-
-    // Tbody
-    const tbody = new Tbody();
-    data.forEach(rowData => {
-      const trBody = new Tr();
-      rowData.forEach(cellData => {
-        trBody.addChild(new Td().addChildren(Array.isArray(cellData) ? cellData : [cellData]));
-      });
-      tbody.addChild(trBody);
-    });
-    this.addChild(tbody);
+  constructor(attrs = {}, headers = [], rows = []) {
+    super({ class: 'table table-bordered table-hover', ...attrs });
+    if (headers.length) this.addChild(new Thead().addChild(new Tr().addChildren(headers.map(h => new Th().addText(h)))));
+    const tb = new Tbody();
+    rows.forEach(row => tb.addChild(new Tr().addChildren(row.map(c => new Td().addText(c)))));
+    this.addChild(tb);
   }
 }
 
-// ----------------------------------------------------
-// Layout Wrappers
-// ----------------------------------------------------
-
-class AdminLTEWrapper extends Div {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' wrapper' }, children);
-  }
+function buildAdminBreadcrumb(items = []) {
+  const ol = new Ol({ class: 'breadcrumb float-sm-end' }); // BS5: float-sm-end
+  items.forEach(it => ol.addChild(
+    new Li({ class: 'breadcrumb-item' })
+      .addChild(it.href ? new A({ href: it.href }).addText(it.text) : new Span().addText(it.text))
+  ));
+  return new Div({ class: 'container-fluid' }).addChild(new Div({ class: 'row mb-2' })
+    .addChild(new Div({ class: 'col-sm-6' }))
+    .addChild(new Div({ class: 'col-sm-6' }).addChild(ol)));
 }
 
-class AdminLTENavbar extends Nav {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' main-header navbar navbar-expand navbar-white navbar-light' }, children);
-  }
-}
+function buildAdminMenu(items = []) {
+  const nav = new Nav({ class: 'mt-2' });
+  // AdminLTE 4 treeview works without jQuery; keep simple structure
+  const ul = new Ul({ class: 'nav nav-pills nav-sidebar flex-column', role: 'menu', 'data-accordion': 'false' });
 
-class AdminLTESidebar extends Aside {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' main-sidebar sidebar-dark-primary elevation-4' }, children);
-  }
-}
-
-class AdminLTEContentWrapper extends Div {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' content-wrapper' }, children);
-  }
-}
-
-class AdminLTEFooter extends Footer {
-  constructor(attrs = {}, children = []) {
-    super({ ...attrs, class: (attrs.class || '') + ' main-footer' }, children);
-  }
-}
-
-// ----------------------------------------------------
-// Dependency & Widget Management
-// ----------------------------------------------------
-
-const JQWIDGETS_LOADED = { status: false, loading: false };
-
-function ensureJqWidgetsLoaded() {
-  return new Promise((resolve) => {
-    if (JQWIDGETS_LOADED.status) return resolve();
-    if (JQWIDGETS_LOADED.loading) {
-      const check = setInterval(() => {
-        if (JQWIDGETS_LOADED.status) {
-          clearInterval(check);
-          resolve();
-        }
-      }, 100);
+  function makeItem(it) {
+    const li = new Li({ class: 'nav-item' });
+    if (it.children && it.children.length) {
+      const a = new A({ href: '#', class: 'nav-link' })
+        .addRawHtml(`<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}<i class="right fas fa-angle-left"></i></p>`);
+      const innerUl = new Ul({ class: 'nav nav-treeview' });
+      it.children.forEach(c => innerUl.addChild(makeItem(c)));
+      li.addChild(a).addChild(innerUl);
     } else {
-      loadJqWidgetsDeps().then(resolve);
+      const a = new A(
+        { href: it.href || '#', class: `nav-link ${it.active ? 'active' : ''}` }
+      ).addRawHtml(
+        `<i class="nav-icon ${it.icon || 'far fa-circle'}"></i><p>${it.text}` +
+        `${it.badge ? `<span class="right badge badge-${it.badge.type || 'danger'}">${it.badge.text}</span>` : ''}</p>`
+      );
+      li.addChild(a);
     }
+    return li;
+  }
+
+  items.forEach(i => ul.addChild(makeItem(i)));
+  nav.addChild(ul);
+  return nav;
+}
+
+// AdminLTE 4 no jQuery requirement; keep as optional hook
+function initAdminLTEWidgets() { /* no-op for AdminLTE 4; place custom init here if needed */ }
+
+// --- Helper builders and utilities ---
+function buildListGroup(items, type = 'ul', attrs = {}) {
+  const listContainer = type === 'ul' ? new Ul({ class: 'list-group', ...attrs }) : new Div({ class: 'list-group', ...attrs });
+  items.forEach(item => {
+    const itemAttrs = { class: 'list-group-item' };
+    if (item.active) itemAttrs.class += ' active';
+    if (item.disabled) itemAttrs.class += ' disabled';
+    let listItem;
+    if (item.href) listItem = new A({ ...itemAttrs, class: itemAttrs.class + ' list-group-item-action', href: item.href });
+    else listItem = new Li(itemAttrs);
+    listItem.addText(item.text);
+    listContainer.addChild(listItem);
   });
+  return listContainer;
 }
 
-function _loadScript(url) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = url;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
+function buildTable(headers, rows) {
+  const thead = new Thead().addChild(new Tr().addChild(...headers.map(h => new Th().addText(h))));
+  const tbody = new Tbody();
+  rows.forEach(row => tbody.addChild(new Tr().addChild(...row.map(cell => new Td().addText(cell)))));
+  return new Table({ class: 'table table-bordered' }).addChild(thead).addChild(tbody).toHtml();
+}
+
+function buildAlert(type, message) {
+  return new Div({ class: `alert alert-${type}`, role: 'alert' }).addText(message).toHtml();
+}
+
+function buildForm(fields, submitText = 'Submit') {
+  const form = new Form({ class: 'form' });
+  fields.forEach(field => {
+    const group = new Div({ class: 'mb-3' });
+    let inputElement;
+    if (field.type === 'textarea') {
+      inputElement = new Textarea({ class: 'form-control', id: field.id, placeholder: field.placeholder || '' });
+    } else {
+      inputElement = new Input(field.type, { class: 'form-control', id: field.id, placeholder: field.placeholder || '' });
+    }
+    group.addChild(inputElement);
+    form.addChild(group);
   });
+  form.addChild(new Button({ type: 'submit', class: 'btn btn-primary' }).addText(submitText));
+  return form.toHtml();
 }
 
-function _loadCSS(url) {
-  return new Promise((resolve, reject) => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = url;
-    link.onload = resolve;
-    link.onerror = reject;
-    document.head.appendChild(link);
-  });
+function buildModal(id, title, body) {
+  return new Div({ class: 'modal fade', id: id, tabindex: '-1' })
+    .addChild(
+      new Div({ class: 'modal-dialog' })
+        .addChild(
+          new Div({ class: 'modal-content' })
+            .addChild(
+              new Div({ class: 'modal-header' })
+                .addChild(new Div({ class: 'modal-title h5' }).addText(title))
+                .addChild(new Button({ type: 'button', class: 'btn-close', 'data-bs-dismiss': 'modal' }))
+            )
+            .addChild(new Div({ class: 'modal-body' }).addChild(new Div().addText(body)))
+            .addChild(
+              new Div({ class: 'modal-footer' })
+                .addChild(new Button({ type: 'button', class: 'btn btn-secondary', 'data-bs-dismiss': 'modal' }).addText('Close'))
+            )
+        )
+    ).toHtml();
 }
-
-function loadAdminLTE5Deps() {
-  if (document.querySelector('link[href*="adminlte.min.css"]')) return Promise.resolve();
-  
-  // Custom CSS Injection (THEME MODIFICATION)
-  const customStyle = document.createElement('style');
-  customStyle.innerHTML = getCustomGoldGradientCSS();
-  document.head.appendChild(customStyle);
-
-  const css = [
-    'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css',
-    'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc.5/dist/css/adminlte.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
-  ];
-  const js = [
-    'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-    'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc.5/dist/js/adminlte.min.js'
-  ];
-  return Promise.all([...css.map(_loadCSS), ...js.map(_loadScript)]);
-}
-
-// Alias for compatibility
-const loadAdminLTEDeps = loadAdminLTE5Deps;
-
-function loadJqWidgetsDeps(theme = 'bootstrap') {
-  if (JQWIDGETS_LOADED.loading) return Promise.resolve();
-  JQWIDGETS_LOADED.loading = true;
-  const version = '17.0.0';
-  const url = `https://www.jqwidgets.com/public/jqwidgets/${version}/`;
-  const css = [
-    `${url}jqwidgets/styles/jqx.base.css`,
-    `${url}jqwidgets/styles/jqx.${theme}.css`
-  ];
-  const js = [
-    `${url}jqwidgets/jqx-all.js`,
-  ];
-  return Promise.all([...css.map(_loadCSS), ...js.map(_loadScript)])
-    .then(() => {
-      JQWIDGETS_LOADED.status = true;
-      JQWIDGETS_LOADED.loading = false;
-    })
-    .catch(err => {
-      console.error('Failed to load jqWidgets dependencies:', err);
-      JQWIDGETS_LOADED.loading = false;
-    });
-}
-
-function initAdminLTEWidgets() {
-  // Initialize AdminLTE components if any custom ones are used
-  if (window.AdminLTE) {
-    // AdminLTE 4 auto-initializes most things but this is a safeguard
-  }
-}
-
-// ----------------------------------------------------
-// Flow.js-lite Integration
-// ----------------------------------------------------
-
-class HtmlFlowUploader extends Div {
-  constructor(flowOptions, attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ' flow-uploader-container' });
-    this.flowOptions = flowOptions;
-    this.id = this.attrs.id || `flow-uploader-${Math.random().toString(36).substring(7)}`;
-    this.setAttr('id', this.id);
-  }
-
-  // Simplified render and initialization example
-  render() {
-    this.clearChildren();
-    this.addChild(new Div({ id: `${this.id}-drop`, class: 'drop-area' }).addText('Drop files here or '));
-    this.addChild(new Button({ id: `${this.id}-browse`, class: 'btn btn-primary' }).addText('Select Files'));
-    this.addChild(new Ul({ id: `${this.id}-list`, class: 'file-list' }));
-
-    // Post-render initialization script
-    const script = `
-      <script>
-        (function() {
-          const id = '${this.id}';
-          const options = ${JSON.stringify(this.flowOptions)};
-          if (!window.Flow) {
-            console.error('Flow.js-lite not loaded. Cannot initialize uploader.');
-            return;
-          }
-          const flow = new Flow({
-            target: options.target,
-            chunkSize: 1024*1024,
-            testChunks: false,
-            query: options.query || {},
-            ...options
-          });
-
-          flow.assignBrowse(document.getElementById(id + '-browse'));
-          flow.assignDrop(document.getElementById(id + '-drop'));
-          
-          flow.on('fileAdded', (file, event) => {
-            const list = document.getElementById(id + '-list');
-            const listItem = document.createElement('li');
-            listItem.id = 'file-' + file.uniqueIdentifier;
-            listItem.innerHTML = file.name + ' (' + file.size + ') <span id="progress-' + file.uniqueIdentifier + '">0%</span>';
-            list.appendChild(listItem);
-            flow.upload();
-          });
-
-          flow.on('fileProgress', (file) => {
-            const progressSpan = document.getElementById('progress-' + file.uniqueIdentifier);
-            if (progressSpan) {
-              progressSpan.innerHTML = Math.floor(file.progress() * 100) + '%';
-            }
-          });
-
-          flow.on('fileSuccess', (file, message) => {
-            const listItem = document.getElementById('file-' + file.uniqueIdentifier);
-            if (listItem) listItem.innerHTML += ' - Uploaded!';
-          });
-          
-          flow.on('fileError', (file, message) => {
-            const listItem = document.getElementById('file-' + file.uniqueIdentifier);
-            if (listItem) listItem.innerHTML += ' - Error: ' + message;
-          });
-        })();
-      </script>
-    `;
-
-    return super.render() + script;
-  }
-}
-
-// ----------------------------------------------------
-// jqWidgets Component Base
-// ----------------------------------------------------
-
-class JqxWidget extends Div {
-  constructor(tag, options = {}, attrs = {}) {
-    super({ ...attrs, class: (attrs.class || '') + ' jqx-widget-container' });
-    this.options = options;
-    this.tag = tag;
-    this.id = this.attrs.id || `jqx-widget-${Math.random().toString(36).substring(7)}`;
-    this.setAttr('id', this.id);
-  }
-
-  render() {
-    const script = `
-      <script>
-        (function() {
-          const id = '${this.id}';
-          const options = ${JSON.stringify(this.options)};
-          ensureJqWidgetsLoaded().then(() => {
-            if (window.jQuery && jQuery.fn.${this.tag}) {
-              jQuery('#' + id)['${this.tag}'](options);
-            } else {
-              console.error('jqWidgets or jQuery not loaded for: ${this.tag}');
-            }
-          }).catch(err => console.error(err));
-        })();
-      </script>
-    `;
-    return super.render() + script;
-  }
-}
-
-class JqxGrid extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxGrid', options, attrs); }
-}
-class JqxChart extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxChart', options, attrs); }
-}
-class JqxDateTimeInput extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxDateTimeInput', options, attrs); }
-}
-class JqxTabs extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxTabs', options, attrs); }
-}
-class JqxTree extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxTree', options, attrs); }
-}
-class JqxComboBox extends JqxWidget {
-  constructor(options = {}, attrs = {}) { super('jqxComboBox', options, attrs); }
-}
-
-class JqxTab extends Div { // Represents a single tab content panel
-  constructor(title, content, attrs = {}) {
-    super(attrs);
-    this.title = title;
-    this.addChildren(Array.isArray(content) ? content : [content]);
-  }
-}
-
-// ----------------------------------------------------
-// Tabulator Table Integration
-// ----------------------------------------------------
-
-class HtmlTabulator extends Div {
-  constructor(options = {}, attrs = {}) {
-    super(attrs);
-    this.options = options;
-    this.id = this.attrs.id || `tabulator-${Math.random().toString(36).substring(7)}`;
-    this.setAttr('id', this.id);
-  }
-
-  render() {
-    const script = `
-      <script>
-        (function() {
-          const id = '${this.id}';
-          const options = ${JSON.stringify(this.options)};
-          
-          if (!window.Tabulator) {
-            console.error('Tabulator not loaded. Cannot initialize table.');
-            return;
-          }
-          
-          const table = new Tabulator('#' + id, {
-            layout: "fitColumns",
-            ...options
-          });
-          
-          // Expose table instance globally for external manipulation if needed
-          window[\`Tabulator_\${id}\`] = table;
-        })();
-      </script>
-    `;
-    return super.render() + script;
-  }
-}
-
-// ----------------------------------------------------
-// Dropzone Integration
-// ----------------------------------------------------
-
-class HtmlDropzone extends Form {
-  constructor(url, options = {}, attrs = {}) {
-    super({ ...attrs, action: url, class: (attrs.class || '') + ' dropzone' });
-    this.options = options;
-    this.id = this.attrs.id || `dropzone-${Math.random().toString(36).substring(7)}`;
-    this.setAttr('id', this.id);
-  }
-
-  render() {
-    // Add default dropzone message
-    this.addChild(new Div({ class: 'dz-message needsclick' }).addText('Drop files here or click to upload.'));
-
-    const optionsStr = JSON.stringify(this.options);
-    const script = `
-      <script>
-        (function() {
-          const id = '#${this.id}';
-          const options = ${optionsStr};
-          
-          if (!window.Dropzone) {
-            console.error('Dropzone not loaded. Cannot initialize uploader.');
-            return;
-          }
-
-          Dropzone.autoDiscover = false; // Prevent auto-discovery if multiple instances are used
-          const dz = new Dropzone(id, {
-            url: jQuery(id).attr('action'),
-            ...options
-          });
-          
-          // Expose instance
-          window[\`Dropzone_\${id}\`] = dz;
-        })();
-      </script>
-    `;
-    return super.render() + script;
-  }
-}
-
-// ----------------------------------------------------
-// Pintura & TOAST UI Image Editor Integrations
-// ----------------------------------------------------
-
-function buildPinturaHtml(imageSrc, attrs = {}) {
-  const editorId = `pintura-${Math.random().toString(36).substring(7)}`;
-  const html = `
-    <div id="${editorId}" style="height: 500px;" ${new Div(attrs)._renderAttrs()}></div>
-    <script>
-    (function() {
-      const boot = () => {
-        if (!window.pintura?.openDefaultImageEditor) return;
-        pintura.openDefaultImageEditor({
-          src: '${imageSrc}',
-          target: document.getElementById('${editorId}'),
-        });
-      };
-      if (window.pintura) boot(); else { window.addEventListener('load', boot); }
-    })();
-    </script>
-  `;
-  return html;
-}
-
-function buildToastUIEditorHtml(imageSrc, attrs = {}) {
-  const editorId = `toast-ui-${Math.random().toString(36).substring(7)}`;
-  const html = `
-    <div id="${editorId}" ${new Div(attrs)._renderAttrs()}></div>
-    <script>
-    (function() {
-      const boot = () => {
-        if (!window.tui?.ImageEditor) return;
-        const imageEditor = new tui.ImageEditor(document.getElementById('${editorId}'), {
-          includeUI: {
-            loadImage: {
-              path: '${imageSrc}',
-              name: 'SampleImage'
-            },
-            menu: ['crop', 'flip', 'rotate', 'draw', 'text', 'icon', 'filter'],
-            initMenu: 'filter',
-            uiSize: {
-              width: '100%',
-              height: '500px'
-            },
-            menuBarPosition: 'bottom'
-          },
-          cssMaxWidth: 700,
-          cssMaxHeight: 500,
-          selectionStyle: {
-            cornerSize: 20,
-            rotatingPointOffset: 70
-          }
-        });
-        window[\`TOAST_UI_\${editorId}\`] = imageEditor;
-        
-        // Ensure white background is applied to the editor's canvas/interface
-        document.getElementById('${editorId}').querySelector('.tui-image-editor-container').style.backgroundColor = '#fff';
-      };
-      if (window.tui?.ImageEditor) boot(); else { window.addEventListener('load', boot); }
-    })();
-    </script>
-  `;
-  return html;
-}
-
-// ----------------------------------------------------
-// General Helper Functions
-// ----------------------------------------------------
 
 function createElement(tag, attrs = {}, children = []) {
-  const ElementClass = exportsAll[tag.charAt(0).toUpperCase() + tag.slice(1)] || HtmlElement;
-  return new ElementClass(tag, attrs, children);
-}
-
-function buildListGroup(items, flush = false, numbered = false, attrs = {}) {
-  const ListTag = numbered ? Ol : Ul;
-  const list = new ListTag({ ...attrs, class: (attrs.class || '') + ` list-group${flush ? ' list-group-flush' : ''}` });
-  items.forEach(item => {
-    const li = new Li({ class: 'list-group-item' });
-    li.addChildren(Array.isArray(item) ? item : [item]);
-    list.addChild(li);
-  });
-  return list;
-}
-
-function buildTable(headers, data = [], bordered = true, hover = true, attrs = {}) {
-  const classes = ['table'];
-  if (bordered) classes.push('table-bordered');
-  if (hover) classes.push('table-hover');
-  
-  const table = new Table({ ...attrs, class: (attrs.class || '') + ' ' + classes.join(' ') });
-
-  // Thead
-  const thead = new Thead();
-  const trHead = new Tr();
-  headers.forEach(h => trHead.addChild(new Th().addText(h)));
-  thead.addChild(trHead);
-  table.addChild(thead);
-
-  // Tbody
-  const tbody = new Tbody();
-  data.forEach(rowData => {
-    const trBody = new Tr();
-    rowData.forEach(cellData => {
-      trBody.addChild(new Td().addChildren(Array.isArray(cellData) ? cellData : [cellData]));
-    });
-    tbody.addChild(trBody);
-  });
-  table.addChild(tbody);
-
-  return table;
-}
-
-function buildAlert(content, color = 'info', dismissible = false, attrs = {}) {
-  const alert = new Div({
-    ...attrs,
-    role: 'alert',
-    class: (attrs.class || '') + ` alert alert-${color}` + (dismissible ? ' alert-dismissible fade show' : '')
-  });
-  
-  alert.addChildren(Array.isArray(content) ? content : [content]);
-
-  if (dismissible) {
-    alert.addChild(new Button({
-      type: 'button',
-      class: 'btn-close',
-      'data-bs-dismiss': 'alert',
-      'aria-label': 'Close'
-    }));
+  const el = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'class') el.className = value;
+    else el.setAttribute(key, value);
   }
-  return alert;
+  children.forEach(child => {
+    if (typeof child === 'string') el.appendChild(document.createTextNode(child));
+    else if (child instanceof Node) el.appendChild(child);
+  });
+  return el;
 }
 
-function buildForm(fields, submitText = 'Submit', attrs = {}) {
-  const form = new Form(attrs);
-  
-  fields.forEach(field => {
-    const formGroup = new Div({ class: 'mb-3' });
-    
-    // Label
-    if (field.label) {
-      formGroup.addChild(new Label({ for: field.id }).addText(field.label));
+// --- Third-party Integrations ---
+class DropzoneForm extends Form {
+  constructor(id, dzOptions = {}, children = []) {
+    super({ id, class: "dropzone", action: "/", enctype: "multipart/form-data" }, children);
+    this.id = id;
+    this.dzOptions = dzOptions;
+    this.initialized = false;
+  }
+  initDropzone(customInitCallback = null) {
+    Dropzone.autoDiscover = false;
+    const messageDiv = new Div({ class: 'dz-message' }).addText('Drag and drop images here or click to upload.').toHtmlElement();
+    const element = this.toHtmlElement();
+    element.appendChild(messageDiv);
+    const dz = new Dropzone(`#${this.id}`, {
+      url: this.dzOptions.url || "/",
+      autoProcessQueue: this.dzOptions.autoProcessQueue ?? false,
+      maxFiles: this.dzOptions.maxFiles ?? null,
+      acceptedFiles: this.dzOptions.acceptedFiles ?? "image/*",
+      addRemoveLinks: true,
+      ...this.dzOptions
+    });
+    if (typeof customInitCallback === "function") customInitCallback(dz);
+    this.initialized = true;
+    return dz;
+  }
+}
+
+class ProgressBar extends Div {
+  constructor(attrs = {}) {
+    super({ class: 'progress', ...attrs });
+    this.bar = new Div({
+      class: 'progress-bar progress-bar-striped progress-bar-animated',
+      role: 'progressbar',
+      'aria-valuenow': 0,
+      'aria-valuemin': 0,
+      'aria-valuemax': 100,
+      style: 'width: 0%'
+    });
+    this.addChild(this.bar);
+  }
+  update(value) {
+    const clampedValue = Math.max(0, Math.min(100, value));
+    this.bar.setAttr('aria-valuenow', clampedValue);
+    this.bar.setStyle('width', `${clampedValue}%`);
+  }
+  hide() { this.removeClass('show'); this.addClass('hide'); this.update(0); }
+  show() { this.removeClass('hide'); this.addClass('show'); }
+}
+
+class JsGrid extends Div {
+  constructor(id, options = {}, attrs = {}) {
+    super({ id, ...attrs });
+    this.id = id;
+    this.options = options;
+  }
+  init(customInitCallback = null) {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.jsGrid === 'undefined') {
+      console.error('jQuery or jsGrid library not found. Please ensure they are loaded.');
+      return;
     }
-    
-    // Input/Textarea
-    let input;
-    const inputAttrs = { 
-      id: field.id, 
-      name: field.name || field.id, 
-      class: 'form-control', 
-      ...field.attrs 
+    const gridElement = jQuery(`#${this.id}`);
+    if (gridElement.length) {
+      gridElement.jsGrid(this.options);
+      if (typeof customInitCallback === 'function') customInitCallback(gridElement);
+    } else {
+      console.warn(`JsGrid container with ID "${this.id}" not found in the DOM.`);
+    }
+  }
+}
+
+class TabulatorTable extends Div {
+  constructor(id, data = [], columns = [], options = {}, attrs = {}) {
+    super({ id, ...attrs });
+    this.id = id;
+    this.data = Array.isArray(data) ? data : [];
+    this.columns = Array.isArray(columns) ? columns : [];
+    this.options = options || {};
+    this.tabulator = null;
+  }
+  render() { return `<div id="${this.id}" ${this.renderAttrs ? this.renderAttrs() : ''}></div>`; }
+  mount() {
+    const el = document.getElementById(this.id);
+    if (!el) { console.error(`TabulatorTable.mount(): element #${this.id} not found`); return; }
+    if (typeof Tabulator === 'undefined') { console.error('Tabulator library not found. Please ensure it is loaded.'); return; }
+    try {
+      this.tabulator = new Tabulator(el, {
+        data: this.data,
+        columns: this.columns,
+        layout: "fitColumns",
+        reactiveData: false,
+        ...this.options,
+      });
+    } catch (err) { console.error('Failed to create Tabulator instance:', err); }
+  }
+  setData(data = []) { this.data = Array.isArray(data) ? data : []; if (this.tabulator) this.tabulator.setData(this.data); return this; }
+  setColumns(columns = []) { this.columns = Array.isArray(columns) ? columns : []; if (this.tabulator) this.tabulator.setColumns(this.columns); return this; }
+  getInstance() { return this.tabulator; }
+  destroy() { if (this.tabulator) { this.tabulator.destroy(); this.tabulator = null; } }
+  download(format = 'csv', fileName = 'data.csv') {
+    if (this.tabulator) {
+      this.tabulator.download(format, fileName);
+    } else {
+      console.error('Tabulator instance not initialized.');
+    }
+  }
+}
+
+/* ==== Embedded Flow.js-lite (API-compatible subset with download support) ==== */
+(function(global){
+  function EventEmitter(){ this._events = {}; }
+  EventEmitter.prototype.on = function(name, fn){ (this._events[name]||(this._events[name]=[])).push(fn); return this; };
+  EventEmitter.prototype.off = function(name, fn){
+    if(!this._events[name]) return this;
+    if(!fn){ delete this._events[name]; return this; }
+    this._events[name] = this._events[name].filter(f=>f!==fn); return this;
+  };
+  EventEmitter.prototype.emit = function(name){
+    var args = Array.prototype.slice.call(arguments,1);
+    (this._events[name]||[]).slice().forEach(fn=>{ try{ fn.apply(null,args);}catch(e){ console.error(e);} });
+  };
+
+  function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function sliceBlob(blob, start, end){ return blob.slice ? blob.slice(start,end) : blob.webkitSlice(start,end); }
+
+  function FlowFile(flow, file, relativePath){
+    this.flow = flow;
+    this.file = file;
+    this.name = file.name;
+    this.size = file.size;
+    this.relativePath = relativePath || file.webkitRelativePath || file.name;
+    this.uniqueIdentifier = (flow.opts.generateUniqueIdentifier || function(file){
+      return (file.size + '-' + (file.name||'').replace(/[^0-9a-zA-Z_-]/g,'') + '-' + uid());
+    })(file, this);
+    this.chunks = [];
+    this._paused = false;
+    this._completed = false;
+    this._errored = false;
+    this._progress = 0;
+    var chunkSize = flow.opts.chunkSize;
+    var offset = 0, index = 0;
+    while(offset < this.size){
+      var end = Math.min(this.size, offset + chunkSize);
+      this.chunks.push(new FlowChunk(this, index++, offset, end));
+      offset = end;
+    }
+  }
+  FlowFile.prototype.pause = function(){ this._paused = true; };
+  FlowFile.prototype.resume = function(){ this._paused = false; };
+  FlowFile.prototype.isComplete = function(){ return this._completed; };
+  FlowFile.prototype.isPaused = function(){ return this._paused; };
+  FlowFile.prototype.progress = function(){ return this._progress; };
+  FlowFile.prototype._recomputeProgress = function(){
+    var done = 0;
+    for(var i=0;i<this.chunks.length;i++){ done += this.chunks[i].progress(); }
+    this._progress = done / this.chunks.length;
+  };
+
+  function FlowChunk(flowFile, index, start, end){
+    this.flowFile = flowFile;
+    this.index = index+1; // 1-based
+    this.start = start;
+    this.end = end;
+    this.size = end - start;
+    this._loaded = 0;
+    this._sent = false;
+    this._success = false;
+    this._error = false;
+    this._xhr = null;
+  }
+  FlowChunk.prototype.progress = function(){
+    if(this._success) return 1;
+    if(this._error) return 0;
+    return this.size ? (this._loaded / this.size) : 0;
+  };
+  FlowChunk.prototype.abort = function(){ try{ if(this._xhr) this._xhr.abort(); }catch(e){} };
+  FlowChunk.prototype.send = function(cb){
+    var self = this, file = self.flowFile.file, flow = self.flowFile.flow, o = flow.opts;
+    var blob = sliceBlob(file, self.start, self.end);
+    var params = Object.assign({}, (typeof o.query==='function'?o.query(self):o.query)||{}, {
+      chunkNumber: self.index,
+      chunkSize: o.chunkSize,
+      currentChunkSize: blob.size,
+      totalSize: file.size,
+      identifier: self.flowFile.uniqueIdentifier,
+      filename: self.flowFile.name,
+      relativePath: self.flowFile.relativePath,
+      totalChunks: self.flowFile.chunks.length
+    });
+
+    var form = new FormData();
+    Object.keys(params).forEach(k=>form.append(k, params[k]));
+    form.append(o.fileParameterName, blob, self.flowFile.name);
+
+    var xhr = new XMLHttpRequest();
+    self._xhr = xhr;
+    xhr.open(o.method || 'POST', o.target, true);
+
+    var headers = (typeof o.headers==='function'?o.headers(self):o.headers)||{};
+    Object.keys(headers).forEach(k=>xhr.setRequestHeader(k, headers[k]));
+
+    xhr.upload.onprogress = function(e){
+      if(e.lengthComputable){
+        self._loaded = e.loaded;
+        self.flowFile._recomputeProgress();
+        flow.emit('fileProgress', self.flowFile, self);
+        flow.emit('progress');
+      }
+    };
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState===4){
+        if(xhr.status>=200 && xhr.status<300){
+          self._success = true;
+          self._sent = true;
+          flow.emit('chunkSuccess', self.flowFile, self, xhr);
+          var allOk = self.flowFile.chunks.every(c=>c._success);
+          self.flowFile._recomputeProgress();
+          flow.emit('fileProgress', self.flowFile, self);
+          if(allOk){
+            self.flowFile._completed = true;
+            flow.emit('fileSuccess', self.flowFile, xhr);
+            var allFilesOk = flow.files.every(f=>f.isComplete());
+            if(allFilesOk) flow.emit('complete');
+          }
+          cb && cb(null);
+        }else{
+          self._error = true;
+          flow.emit('chunkError', self.flowFile, self, xhr);
+          flow.emit('fileError', self.flowFile, xhr);
+          cb && cb(new Error('HTTP '+xhr.status));
+        }
+      }
+    };
+    xhr.onerror = function(){
+      self._error = true;
+      flow.emit('chunkError', self.flowFile, self, xhr);
+      flow.emit('fileError', self.flowFile, xhr);
+      cb && cb(new Error('network error'));
+    };
+    xhr.send(form);
+  };
+
+  function Flow(opts){
+    this.opts = Object.assign({
+      target: '/upload',
+      singleFile: false,
+      fileParameterName: 'file',
+      chunkSize: 1024*1024, // 1MB
+      simultaneousUploads: 3,
+      method: 'POST',
+      query: {},
+      headers: {},
+      testChunks: false,
+      downloadTarget: '/download'
+    }, opts||{});
+    this.files = [];
+    this._emitter = new EventEmitter();
+    this._processing = false;
+  }
+  Flow.prototype.on = function(n, fn){ this._emitter.on(n, fn); return this; };
+  Flow.prototype.off = function(n, fn){ this._emitter.off(n, fn); return this; };
+  Flow.prototype.emit = function(){ this._emitter.emit.apply(this._emitter, arguments); };
+  Flow.prototype.addFile = function(file, relativePath){
+    var f = new FlowFile(this, file, relativePath);
+    if(this.opts.singleFile) this.files = [f]; else this.files.push(f);
+    this.emit('fileAdded', f);
+    this.emit('filesSubmitted', [f]);
+    return f;
+  };
+  Flow.prototype.addFiles = function(fileList){
+    var arr = Array.prototype.slice.call(fileList);
+    var added = arr.map(f=>this.addFile(f));
+    this.emit('filesSubmitted', added);
+    return added;
+  };
+  Flow.prototype.assignBrowse = function(domNode, isDirectory, multiple){
+    var input = document.createElement('input');
+    input.type = 'file';
+    if(multiple!==false && !this.opts.singleFile) input.multiple = true;
+    if(isDirectory){ input.setAttribute('webkitdirectory',''); }
+    input.style.display = 'none';
+    domNode._flowBrowseInput = input;
+    domNode.addEventListener('click', function(){ input.value=''; input.click(); });
+    var self = this;
+    input.addEventListener('change', function(e){
+      if(e.target.files && e.target.files.length){
+        self.addFiles(e.target.files);
+        self.emit('browse', e.target.files);
+      }
+    });
+    document.body.appendChild(input);
+  };
+  Flow.prototype.assignDrop = function(domNode){
+    var self = this;
+    domNode.addEventListener('dragover', function(e){ e.preventDefault(); domNode.classList.add('is-dragover'); });
+    domNode.addEventListener('dragleave', function(e){ domNode.classList.remove('is-dragover'); });
+    domNode.addEventListener('drop', function(e){
+      e.preventDefault();
+      domNode.classList.remove('is-dragover');
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        self.addFiles(e.dataTransfer.files);
+      }
+    });
+  };
+  Flow.prototype.upload = function(){
+    var self = this;
+    if(this._processing) return;
+    this._processing = true;
+    function pump(){
+      if(!self._processing) return;
+      var inFlight = 0;
+      for(var i=0;i<self.files.length;i++){
+        var f = self.files[i];
+        if(f.isPaused() || f.isComplete()) continue;
+        var next = f.chunks.find(c=>!c._sent && !c._success && !c._error);
+        while(next && inFlight < self.opts.simultaneousUploads){
+          inFlight++;
+          (function(chun,k){
+            chunk.send(function(){
+              inFlight--;
+              pump();
+            });
+          })(next);
+          next = f.chunks.find(c=>!c._sent && !c._success && !c._error);
+        }
+      }
+      var hasPending = self.files.some(f=>f.chunks.some(c=>!c._success && !c._error));
+      if(!hasPending && inFlight===0){ self._processing = false; }
+    }
+    pump();
+  };
+  Flow.prototype.pause = function(){
+    this._processing = false;
+    this.files.forEach(f=>f.pause());
+  };
+  Flow.prototype.resume = function(){
+    this.files.forEach(f=>f.resume());
+    this.upload();
+  };
+  Flow.prototype.cancel = function(){
+    this._processing = false;
+    this.files.forEach(function(f){ f.chunks.forEach(c=>c.abort()); });
+  };
+  Flow.prototype.removeFile = function(flowFile){ this.files = this.files.filter(f=>f!==flowFile); };
+  Flow.prototype.download = function(fileIdentifier, fileName, cb){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', this.opts.downloadTarget + '?identifier=' + encodeURIComponent(fileIdentifier), true);
+    xhr.responseType = 'blob';
+    xhr.onload = function(){
+      if (xhr.status >= 200 && xhr.status < 300) {
+        var blob = xhr.response;
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        cb && cb(null, blob);
+      } else {
+        cb && cb(new Error('HTTP ' + xhr.status));
+      }
+    };
+    xhr.onerror = function(){
+      cb && cb(new Error('network error'));
+    };
+    xhr.send();
+  };
+
+  global.Flow = Flow;
+})(window);
+
+/* ==== HtmlFlowUploader (UI using HtmlElement system with download support) ==== */
+class HtmlFlowUploader extends HtmlElement {
+  constructor(options = {}){
+    super('div', { class: 'flow-uploader' }, []);
+    const defaults = {
+      target: '/upload',
+      singleFile: false,
+      chunkSize: 1024*1024,
+      simultaneousUploads: 3,
+      method: 'POST',
+      accept: '*/*',
+      dropText: 'Drop files here',
+      buttonText: 'Select files',
+      startText: 'Start upload',
+      pauseText: 'Pause',
+      resumeText: 'Resume',
+      cancelText: 'Cancel',
+      downloadText: 'Download',
+      showList: true
+    };
+    this.opts = Object.assign({}, defaults, options || {});
+    this._ids = {
+      drop: 'drop-' + Math.random().toString(36).slice(2),
+      btn: 'btn-' + Math.random().toString(36).slice(2),
+      list: 'list-' + Math.random().toString(36).slice(2),
+      start: 'start-' + Math.random().toString(36).slice(2),
+      pause: 'pause-' + Math.random().toString(36).slice(2),
+      resume: 'resume-' + Math.random().toString(36).slice(2),
+      cancel: 'cancel-' + Math.random().toString(36).slice(2),
+      download: 'download-' + Math.random().toString(36).slice(2),
+    };
+    this._flow = null;
+
+    // Build UI
+    this
+      .addChild(new HtmlElement('div', { id: this._ids.drop, class: 'flow-dropzone' }, [
+        new HtmlElement('p', {}, [ new HtmlText(this.opts.dropText) ])
+      ]))
+      .addChild(new HtmlElement('div', { class: 'flow-controls' }, [
+        new HtmlElement('button', { id: this._ids.btn, type: 'button', class: 'flow-btn-browse' }, [ new HtmlText(this.opts.buttonText) ]),
+        new HtmlElement('button', { id: this._ids.start, type: 'button', class: 'flow-btn-start' }, [ new HtmlText(this.opts.startText) ]),
+        new HtmlElement('button', { id: this._ids.pause, type: 'button', class: 'flow-btn-pause' }, [ new HtmlText(this.opts.pauseText) ]),
+        new HtmlElement('button', { id: this._ids.resume, type: 'button', class: 'flow-btn-resume' }, [ new HtmlText(this.opts.resumeText) ]),
+        new HtmlElement('button', { id: this._ids.cancel, type: 'button', class: 'flow-btn-cancel' }, [ new HtmlText(this.opts.cancelText) ]),
+        new HtmlElement('button', { id: this._ids.download, type: 'button', class: 'flow-btn-download' }, [ new HtmlText(this.opts.downloadText) ])
+      ]));
+
+    if(this.opts.showList){
+      this.addChild(new HtmlElement('ul', { id: this._ids.list, class: 'flow-file-list' }, []));
+    }
+  }
+
+  mount(container){
+    const el = this.toHtmlElement();
+    container.appendChild(el);
+    this._initFlow(el);
+    return el;
+  }
+
+  _initFlow(root){
+    const drop = root.querySelector('#'+this._ids.drop);
+    const btn = root.querySelector('#'+this._ids.btn);
+    const list = root.querySelector('#'+this._ids.list);
+    const startBtn = root.querySelector('#'+this._ids.start);
+    const pauseBtn = root.querySelector('#'+this._ids.pause);
+    const resumeBtn = root.querySelector('#'+this._ids.resume);
+    const cancelBtn = root.querySelector('#'+this._ids.cancel);
+    const downloadBtn = root.querySelector('#'+this._ids.download);
+
+    const flow = new Flow({
+      target: this.opts.target,
+      downloadTarget: this.opts.downloadTarget || '/download',
+      singleFile: this.opts.singleFile,
+      chunkSize: this.opts.chunkSize,
+      simultaneousUploads: this.opts.simultaneousUploads,
+      method: this.opts.method,
+      query: this.opts.query || {},
+      headers: this.opts.headers || {},
+      fileParameterName: this.opts.fileParameterName || 'file'
+    });
+    this._flow = flow;
+
+    flow.assignDrop(drop);
+    flow.assignBrowse(btn, false, !this.opts.singleFile);
+
+    const renderFileItem = (f)=>{
+      const li = document.createElement('li');
+      li.className = 'flow-file-item';
+      li.innerHTML = `
+        <div class="flow-file-name">${f.name}</div>
+        <div class="flow-file-progress"><div class="bar" style="width:0%"></div></div>
+        <div class="flow-file-size">${(f.size/1024/1024).toFixed(2)} MB</div>
+      `;
+      li._bar = li.querySelector('.bar');
+      li._update = function(){ li._bar.style.width = Math.round(f.progress()*100) + '%'; };
+      return li;
     };
 
-    if (field.type === 'textarea') {
-      input = new Textarea(inputAttrs).addText(field.value || '');
-    } else if (field.type === 'select') {
-      input = new HtmlElement('select', inputAttrs);
-      (field.options || []).forEach(opt => {
-        const option = new HtmlElement('option', { value: opt.value }).addText(opt.text);
-        if (opt.value == field.value) option.setAttr('selected', true);
-        input.addChild(option);
+    const fileNodes = new Map();
+
+    flow.on('fileAdded', function(file){
+      if(list){
+        const node = renderFileItem(file);
+        list.appendChild(node);
+        fileNodes.set(file, node);
+      }
+    });
+
+    flow.on('fileProgress', function(file){
+      const node = fileNodes.get(file);
+      if(node && node._update) node._update();
+    });
+
+    flow.on('fileSuccess', function(file, xhr){
+      const node = fileNodes.get(file);
+      if(node){
+        node.classList.add('success');
+        node._bar.style.width = '100%';
+      }
+    });
+
+    flow.on('fileError', function(file, xhr){
+      const node = fileNodes.get(file);
+      if(node){ node.classList.add('error'); }
+    });
+
+    startBtn && startBtn.addEventListener('click', ()=>flow.upload());
+    pauseBtn && pauseBtn.addEventListener('click', ()=>flow.pause());
+    resumeBtn && resumeBtn.addEventListener('click', ()=>flow.resume());
+    cancelBtn && cancelBtn.addEventListener('click', ()=>flow.cancel());
+    downloadBtn && downloadBtn.addEventListener('click', ()=>{
+      flow.files.forEach(f=>{
+        if (f.isComplete()) {
+          flow.download(f.uniqueIdentifier, f.name);
+        }
       });
-      input.setAttr('class', 'form-select');
-    } else {
-      input = new Input({ type: field.type || 'text', value: field.value || '', ...inputAttrs });
-    }
-    
-    formGroup.addChild(input);
-    
-    // Help Text
-    if (field.helpText) {
-      formGroup.addChild(new Div({ class: 'form-text' }).addText(field.helpText));
-    }
-    
-    form.addChild(formGroup);
-  });
-
-  // Submit Button (THEME MODIFICATION: Add Gold Gradient Class)
-  form.addChild(new Button({ 
-    type: 'submit', 
-    class: 'btn btn-primary bg-gold-gradient' // Applies gold gradient
-  }).addText(submitText));
-
-  return form;
+    });
+  }
 }
 
-function buildModal(id, title, bodyContent, footerContent = null, size = null, attrs = {}) {
-  const modal = new Div({
-    ...attrs,
-    class: (attrs.class || '') + ' modal fade',
-    id: id,
-    tabindex: '-1',
-    'aria-labelledby': `${id}Label`,
-    'aria-hidden': 'true'
-  });
-
-  const dialogClasses = `modal-dialog${size ? ` modal-${size}` : ''}`;
-  const dialog = new Div({ class: dialogClasses });
-  modal.addChild(dialog);
-
-  const content = new Div({ class: 'modal-content' });
-  dialog.addChild(content);
-
-  // Header
-  const header = new Div({ class: 'modal-header' });
-  header.addChild(new H5({ class: 'modal-title', id: `${id}Label` }).addText(title));
-  header.addChild(new Button({
-    type: 'button',
-    class: 'btn-close',
-    'data-bs-dismiss': 'modal',
-    'aria-label': 'Close'
-  }));
-  content.addChild(header);
-
-  // Body
-  const body = new Div({ class: 'modal-body' });
-  body.addChildren(Array.isArray(bodyContent) ? bodyContent : [bodyContent]);
-  content.addChild(body);
-
-  // Footer
-  const footer = new Div({ class: 'modal-footer' });
-  if (footerContent) {
-    footer.addChildren(Array.isArray(footerContent) ? footerContent : [footerContent]);
-  } else {
-    // Default close button (THEME MODIFICATION: Add Gold Gradient Class)
-    footer.addChild(new Button({
-      type: 'button',
-      class: 'btn btn-primary bg-gold-gradient', // Applies gold gradient
-      'data-bs-dismiss': 'modal'
-    }).addText('Close'));
+// --- Exporting to global scope ---
+// --- jqWidgets Loader + Auto Ensure ---
+(function(){
+  function _injectLink(href){
+    if (document.querySelector(`link[href="${href}"]`)) return Promise.resolve();
+    return new Promise(function(resolve, reject){
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = href;
+      l.onload = () => resolve();
+      l.onerror = () => reject(new Error('Failed to load CSS: ' + href));
+      document.head.appendChild(l);
+    });
   }
-  content.addChild(footer);
+  function _injectScript(src){
+    if (document.querySelector(`script[src="${src}"]`)) {
+      // If already in DOM, it may still be loading; wait a tick.
+      return Promise.resolve();
+    }
+    return new Promise(function(resolve, reject){
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load JS: ' + src));
+      document.head.appendChild(s);
+    });
+  }
 
+  let _jqwLoadingPromise = null;
+
+  function loadJqWidgetsDeps(theme = 'material'){
+    // Minimal but broadly useful set. You can add more jqx*.js later if needed.
+    const css = [
+      `https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/styles/jqx.base.css`,
+      `https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/styles/jqx.${theme}.css`
+    ];
+    const js = [
+      'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcore.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxdata.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxbuttons.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxscrollbar.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxmenu.js',
+      // Grid
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.sort.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.filter.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxgrid.selection.js',
+      // Chart
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxchart.core.js',
+      // Tabs
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxtabs.js',
+      // DateTimeInput (needs calendar + datetimeinput)
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxdatetimeinput.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcalendar.js',
+      // Tree
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxpanel.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxtree.js',
+      // ComboBox
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxlistbox.js',
+      'https://cdn.jsdelivr.net/npm/jqwidgets-scripts@17.0.0/jqwidgets/jqxcombobox.js'
+    ];
+
+    // Load CSS first, then JS in order.
+    const cssP = css.reduce((p, href)=>p.then(()=>_injectLink(href)), Promise.resolve());
+    const jsP = js.reduce((p, src)=>p.then(()=>_injectScript(src)), Promise.resolve());
+    return cssP.then(()=>jsP);
+  }
+
+  function ensureJqWidgetsLoaded(){
+    if (_jqwLoadingPromise) return _jqwLoadingPromise;
+    _jqwLoadingPromise = loadJqWidgetsDeps().then(function(){
+      // Poll until jQuery is available; usually immediate after jquery is loaded.
+      return new Promise(function(resolve){
+        (function waitForJQ(){
+          if (typeof window.jQuery !== 'undefined') resolve();
+          else setTimeout(waitForJQ, 25);
+        })();
+      });
+    });
+    return _jqwLoadingPromise;
+  }
+
+  // --- jqWidgets Base Wrapper ---
+  class JqxWidget extends Div {
+    constructor(id, jqxType, options = {}, attrs = {}) {
+      super({ id, ...attrs });
+      this.id = id;
+      this.jqxType = jqxType; // e.g., 'jqxGrid', 'jqxChart', 'jqxTabs', 'jqxDateTimeInput'
+      this.options = options || {};
+      this.instance = null;
+    }
+    init(callback = null) {
+      const runInit = () => {
+        if (typeof jQuery === 'undefined') {
+          console.error('jQuery not available after loading.');
+          return;
+        }
+        const $el = jQuery(`#${this.id}`);
+        const fn = $el[this.jqxType];
+        if (typeof fn !== 'function') {
+          console.error(`jqWidgets plugin "${this.jqxType}" not found. Make sure its script is loaded.`);
+          return;
+        }
+        $el[this.jqxType](this.options);
+        this.instance = $el;
+        if (typeof callback === 'function') callback($el);
+        return $el;
+      };
+
+      // If already loaded, init right away; otherwise autoload then init.
+      if (typeof jQuery !== 'undefined' && typeof jQuery(`#${this.id}`)[this.jqxType] === 'function') {
+        return Promise.resolve(runInit());
+      } else {
+        return ensureJqWidgetsLoaded().then(runInit);
+      }
+    }
+    getInstance(){ return this.instance; }
+    setOptions(opts = {}){
+      this.options = Object.assign({}, this.options, opts);
+      if (this.instance && typeof this.instance[this.jqxType] === 'function') {
+        this.instance[this.jqxType](this.options);
+      }
+      return this;
+    }
+  }
+
+  // --- Specific Wrappers ---
+  class JqxGrid extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxGrid', options, attrs); }
+  }
+  class JqxChart extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxChart', options, attrs); }
+  }
+  class JqxDateTimeInput extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxDateTimeInput', options, attrs); }
+  }
+  class JqxTabs extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxTabs', options, attrs); }
+  }
+  // Alias for user ergonomics (user asked for jqxTab)
+  const JqxTab = JqxTabs;
+  class JqxTree extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxTree', options, attrs); }
+  }
+  class JqxComboBox extends JqxWidget {
+    constructor(id, options = {}, attrs = {}) { super(id, 'jqxComboBox', options, attrs); }
+  }
+
+  // Expose to window now in case exports block below is edited differently.
+  window.loadJqWidgetsDeps = loadJqWidgetsDeps;
+  window.ensureJqWidgetsLoaded = ensureJqWidgetsLoaded;
+  window.JqxWidget = JqxWidget;
+  window.JqxGrid = JqxGrid;
+  window.JqxChart = JqxChart;
+  window.JqxDateTimeInput = JqxDateTimeInput;
+  window.JqxTabs = JqxTabs;
+  window.JqxTab = JqxTab;
+  window.JqxTree = JqxTree;
+  window.JqxComboBox = JqxComboBox;
+})();
+
+// --- Simple Bootstrap 5 NavTabs builder ---
+class NavTabs extends HtmlElement {
+  constructor({id = 'imageTabs', navId = 'imageTabsNav', contentId = 'imageTabsContent'} = {}) {
+    super('div', { id, class: 'mt-4' });
+    const ul = new HtmlElement('ul', { id: navId, class: 'nav nav-tabs flex-nowrap overflow-auto', role: 'tablist', style: 'white-space:nowrap;' });
+    const content = new HtmlElement('div', { id: contentId, class: 'tab-content border border-1 border-top-0 p-3 rounded-bottom' });
+    this.addChildren([ul, content]);
+  }
+}
+window.NavTabs = NavTabs;
+
+// Html.js - generate standalone editor HTML that will run in a new tab.
+// It uses Pintura IIFE, processes the image, converts result Blob to DataURL and posts back to window.opener.
+// The opener reconstructs the Blob and stores it.
+// Uses robust fallbacks for Pintura API presence.
+function generateEditorHTML({ imageUrl, fileName, sourceFileId }) {
+  const escName = (fileName || 'image.png').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const escUrl = (imageUrl || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const html = `
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Edit: ${escName}</title>
+    <link rel="stylesheet" href="https://unpkg.com/@pqina/pintura/pintura.css" />
+    <style>html,body{height:100%;margin:0}body{display:flex;flex-direction:column;height:100%;}header{padding:10px;border-bottom:1px solid #eee;background:#fafafa}#editor{flex:1;min-height:0}footer{padding:8px;border-top:1px solid #eee;background:#fbfbfd;display:flex;gap:8px;align-items:center;}</style>
+  </head>
+  <body>
+    <header>
+      <strong>Pintura Editor</strong> — ${escName}
+    </header>
+    <div id="editor"></div>
+    <footer>
+      <button id="closeBtn">Close</button>
+      <div style="flex:1"></div>
+      <button id="exportBtn">Export</button>
+    </footer>
+
+    <script src="https://unpkg.com/@pqina/pintura/pintura-iife.js"></script>
+    <script>
+      (function(){
+        const imageUrl = ${JSON.stringify(escUrl)};
+        const fileName = ${JSON.stringify(escName)};
+        const sourceFileId = ${JSON.stringify(sourceFileId || '')};
+
+        function nameEdited(originalName, blobType){
+          const base = originalName || 'image';
+          const parts = base.split('.');
+          const ext = (parts.length>1 ? parts.pop() : '');
+          const stem = parts.join('.') || 'image';
+          let outExt = 'png';
+          if (blobType) {
+            if (blobType.indexOf('jpeg') !== -1) outExt = 'jpg';
+            else if (blobType.indexOf('webp') !== -1) outExt = 'webp';
+            else if (blobType.indexOf('png') !== -1) outExt = 'png';
+          } else if (ext) outExt = ext;
+          return stem + '_edited.' + outExt;
+        }
+
+        // Wait until Pintura is available
+        function whenPintura(cb){
+          if (window.Pintura) return cb(null, window.Pintura);
+          const to = setInterval(()=>{
+            if (window.Pintura){ clearInterval(to); cb(null, window.Pintura); }
+          }, 50);
+          // safety timeout
+          setTimeout(()=>{ if (!window.Pintura) cb(new Error('Pintura not found')); }, 5000);
+        }
+
+        whenPintura((err, P)=>{
+          if (err) {
+            alert('Pintura failed to load: ' + err.message);
+            return;
+          }
+          // Try appendDefaultEditor into #editor, fallback to openDefaultEditor overlay
+          let editor;
+          try {
+            if (P.appendDefaultEditor) {
+              editor = P.appendDefaultEditor('#editor', { src: imageUrl });
+            } else if (P.openDefaultEditor) {
+              editor = P.openDefaultEditor({ src: imageUrl });
+            } else {
+              throw new Error('Pintura API not found');
+            }
+          } catch (e) {
+            console.error(e);
+            alert('Failed to create editor: ' + (e && e.message ? e.message : e));
+            return;
+          }
+
+          document.getElementById('closeBtn').addEventListener('click', ()=>{ window.close(); });
+
+          document.getElementById('exportBtn').addEventListener('click', async ()=>{
+            try {
+              const result = await editor.processImage();
+              const blob = (result && result.dest) ? result.dest : result;
+              // convert blob -> dataURL
+              const reader = new FileReader();
+              reader.onload = function(e){
+                const dataUrl = e.target.result;
+                const suggestedName = nameEdited(fileName, blob.type);
+                if (window.opener && !window.opener.closed) {
+                  window.opener.postMessage({ type: 'pintura-result', payload: { name: suggestedName, dataUrl, sourceFileId } }, '*');
+                } else {
+                  // if no opener, download directly as fallback
+                  const a = document.createElement('a');
+                  a.href = dataUrl;
+                  a.download = suggestedName;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                }
+                // keep window open so user can continue; optionally close:
+                // window.close();
+              };
+              reader.readAsDataURL(blob);
+            } catch (err) {
+              alert('Export failed: ' + (err && err.message ? err.message : err));
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
+  </html>
+  `;
+  return html;
+}
+
+// =========================
+// Progress Modal Component
+// =========================
+
+class ProgressModal {
+  constructor(id = "progressModal", title = "Processing", withSpinner = true) {
+    this.id = id;
+    this.title = title;
+    this.withSpinner = withSpinner;
+    this.progress = 0;
+  }
+
+  setProgress(value) {
+    this.progress = Math.min(100, Math.max(0, value));
+    const bar = document.querySelector(`#${this.id} .progress-bar`);
+    if (bar) {
+      bar.style.width = this.progress + "%";
+      bar.textContent = this.progress + "%";
+    }
+  }
+
+  show() {
+    const modal = new bootstrap.Modal(document.getElementById(this.id), { backdrop: 'static', keyboard: false });
+    modal.show();
+    this.modalInstance = modal;
+  }
+
+  hide() {
+    if (this.modalInstance) this.modalInstance.hide();
+  }
+
+  render() {
+    const modal = new HtmlElement("div", { class: "modal fade", id: this.id, tabindex: "-1" }, [
+      new HtmlElement("div", { class: "modal-dialog modal-dialog-centered" }, [
+        new HtmlElement("div", { class: "modal-content" }, [
+          new HtmlElement("div", { class: "modal-header" }, [
+            new HtmlElement("h5", { class: "modal-title" }).addText(this.title),
+            new HtmlElement("button", { type: "button", class: "btn-close", "data-bs-dismiss": "modal" })
+          ]),
+          new HtmlElement("div", { class: "modal-body text-center" }, [
+            this.withSpinner ? new HtmlElement("div", { class: "mb-3" }, [
+              new HtmlElement("div", { class: "spinner-border text-primary", role: "status" }, [
+                new HtmlElement("span", { class: "visually-hidden" }).addText("Loading...")
+              ])
+            ]) : null,
+            new HtmlElement("div", { class: "progress" }, [
+              new HtmlElement("div", {
+                class: "progress-bar progress-bar-striped progress-bar-animated",
+                role: "progressbar",
+                style: "width: 0%"
+              }).addText("0%")
+            ])
+          ]),
+          new HtmlElement("div", { class: "modal-footer" }, [
+            new HtmlElement("button", { type: "button", class: "btn btn-secondary", "data-bs-dismiss": "modal" }).addText("Close")
+          ])
+        ])
+      ])
+    ]);
+
+    return modal.toHtml();
+  }
+}
+
+// =========================
+// Example Usage
+// =========================
+
+// Inject reusable progress modal into page
+function injectProgressModal() {
+  const modal = new ProgressModal("progressModal", "Uploading Files", true);
+  document.body.insertAdjacentHTML("beforeend", modal.render());
   return modal;
 }
 
-function buildAdminMenu(items, isSidebar = true) {
-  // A complex function implementation is assumed here, returning a Nav element
-  // that uses <a> tags. No direct styling changes needed here, relies on AdminLTE CSS.
-  // The structure typically involves <ul> and <li> with class 'nav-item' and 'nav-link'.
-  // The active link relies on the external CSS in getCustomGoldGradientCSS for gradient.
-  const ul = new Ul({ class: `nav nav-pills nav-sidebar flex-column` });
-  
-  const buildItem = (item) => {
-    const li = new Li({ class: 'nav-item' });
-    const link = new A({ href: item.link || '#', class: 'nav-link' + (item.active ? ' active' : '') });
-    link.addChild(new I({ class: `nav-icon ${item.icon || 'fas fa-th'}` }));
-    link.addChild(new P().addText(item.text));
-    li.addChild(link);
-    return li;
-  }
-  
-  items.forEach(item => ul.addChild(buildItem(item)));
-  
-  const sidebarMenu = new Div({ class: 'sidebar' }).addChild(new Nav({ class: 'mt-2' }).addChild(ul));
-  return isSidebar ? sidebarMenu : ul;
+// ----------------------------------------------------
+// ★ NEW: TOAST UI Image Editor Integration
+// ----------------------------------------------------
+
+// Loader for TUI Image Editor + deps. Safe to call multiple times.
+function loadTuiImageEditorDeps(options = {}) {
+  const {
+    fabricUrl = 'https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js',
+    cssEditor = 'https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.css',
+    cssColorPicker = 'https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.css',
+    jsCodeSnippet = 'https://uicdn.toast.com/tui-code-snippet/latest/tui-code-snippet.js',
+    jsColorPicker = 'https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.js',
+    jsEditor = 'https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.js'
+  } = options;
+
+  function injectLink(href){ if (document.querySelector(`link[href="${href}"]`)) return Promise.resolve(); return new Promise((res,rej)=>{ const l=document.createElement('link'); l.rel='stylesheet'; l.href=href; l.onload=()=>res(); l.onerror=()=>rej(new Error('CSS '+href)); document.head.appendChild(l); }); }
+  function injectScript(src){ if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve(); return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error('JS '+src)); document.body.appendChild(s); }); }
+
+  const cssP = Promise.all([injectLink(cssEditor), injectLink(cssColorPicker)]);
+  // Order matters: code-snippet -> fabric -> color-picker -> image-editor
+  const jsP = cssP
+    .then(()=>injectScript(jsCodeSnippet))
+    .then(()=>injectScript(fabricUrl))
+    .then(()=>injectScript(jsColorPicker))
+    .then(()=>injectScript(jsEditor));
+
+  return jsP.then(()=> {
+    if (!window.tui || !window.tui.ImageEditor) throw new Error('tui ImageEditor not available after load');
+    return window.tui.ImageEditor;
+  });
 }
 
-function buildAdminBreadcrumb(items) {
-  const ol = new Ol({ class: 'breadcrumb float-sm-right' });
-  items.forEach((item, index) => {
-    const li = new Li({ class: 'breadcrumb-item' + (item.active ? ' active' : '') });
-    if (item.active) {
-      li.addText(item.text);
-    } else {
-      li.addChild(new A({ href: item.link || '#' }).addText(item.text));
-    }
-    ol.addChild(li);
-  });
+// Lightweight theme presets (dark/light). You can extend these.
+const TUI_THEMES = {
+  dark: {
+    'menu.backgroundColor': '#1f2937',
+    'common.backgroundColor': '#0b0f19',
+    'downloadButton.backgroundColor': '#2563eb',
+    'downloadButton.borderColor': '#2563eb'
+  },
+  light: {
+    'menu.backgroundColor': '#ffffff',
+    'common.backgroundColor': '#f9fafb',
+    'downloadButton.backgroundColor': '#2563eb',
+    'downloadButton.borderColor': '#2563eb'
+  }
+};
 
-  const header = new Div({ class: 'content-header' });
-  const container = new Div({ class: 'container-fluid' });
-  const row = new Div({ class: 'row mb-2' });
-  row.addChild(new Div({ class: 'col-sm-6' }).addChild(new H1({ class: 'm-0' }).addText(items.slice(-1)[0].text)));
-  row.addChild(new Div({ class: 'col-sm-6' }).addChild(ol));
-  container.addChild(row);
-  header.addChild(container);
-  return header;
+// Reusable Editor wrapper
+class TuiImageEditor extends Div {
+  constructor({ id = uid('tui-editor-'), options = {}, theme = 'dark', height = '600px', includeDefaultUI = true } = {}) {
+    super({ id, class:'tui-editor-container border rounded' });
+    this._id = id;
+    this._height = height;
+    this._includeDefaultUI = includeDefaultUI;
+    this._opts = options || {};
+    this._themeKey = theme;
+    this._instance = null;
+  }
+
+  // Call after element is in DOM
+  async init(depsOptions = {}) {
+    await loadTuiImageEditorDeps(depsOptions);
+    const root = document.getElementById(this._id);
+    if (!root) { console.error(`TuiImageEditor.init(): #${this._id} not found`); return; }
+
+    root.style.height = this._height;
+
+    const themeObj = (typeof this._themeKey === 'string') ? (TUI_THEMES[this._themeKey] || {}) : (this._themeKey || {});
+    const defaultUI = this._includeDefaultUI ? {
+      loadImage: this._opts.loadImage || null,
+      theme: themeObj,
+      menu: ['shape', 'filter', 'text', 'mask', 'icon', 'draw', 'crop', 'flip', 'rotate'],
+      uiSize: { width: '100%', height: this._height },
+      menuBarPosition: 'bottom'
+    } : null;
+
+    const opts = {
+      includeUI: defaultUI,
+      cssMaxWidth: 2000,
+      cssMaxHeight: 2000,
+      selectionStyle: { cornerSize: 20, rotatingPointOffset: 70 },
+      usageStatistics: false,
+      ...this._opts
+    };
+
+    this._instance = new window.tui.ImageEditor(root, opts);
+    return this._instance;
+  }
+
+  getInstance(){ return this._instance; }
+
+  async loadImageFromURL(url, name='image') {
+    if (!this._instance) throw new Error('Editor not initialized');
+    return this._instance.loadImageFromURL(url, name);
+  }
+
+  // Get the edited image as Blob
+  async getBlob(type='image/png', quality=0.92) {
+    if (!this._instance) throw new Error('Editor not initialized');
+    const dataUrl = this._instance.toDataURL({ format: type.includes('jpeg') ? 'jpeg' : (type.includes('webp') ? 'webp' : 'png'), quality });
+    const res = await fetch(dataUrl); return await res.blob();
+  }
+
+  async getDataURL(type='image/png', quality=0.92) {
+    if (!this._instance) throw new Error('Editor not initialized');
+    return this._instance.toDataURL({ format: type.includes('jpeg') ? 'jpeg' : (type.includes('webp') ? 'webp' : 'png'), quality });
+  }
+
+  switchTheme(themeKey='dark') {
+    this._themeKey = themeKey;
+    if (this._instance?.ui?.theme) this._instance.ui.theme.setTheme(TUI_THEMES[themeKey] || {});
+  }
+
+  destroy(){ try { this._instance?.destroy?.(); } catch(e) {} this._instance = null; }
+}
+
+// AdminLTE card wrapper for quick drop-in
+class TuiImageEditorCard extends AdminLTECard {
+  constructor({ title='Image Editor', height='600px', theme='dark', options={}, depsOptions={} } = {}) {
+    super('primary', false, { class:'mb-3' });
+    this.addHeader(title);
+    const editor = new TuiImageEditor({ height, theme, options });
+    this.addBody(editor);
+    this.editor = editor;
+    this._depsOptions = depsOptions;
+  }
+  async mountAndInit(container){
+    const el = this.toHtmlElement();
+    container.appendChild(el);
+    await this.editor.init(this._depsOptions);
+    return this.editor.getInstance();
+  }
+}
+
+// ----------------------------------------------------
+// ★ NEW: Standalone HTML generator with TOAST UI Image Editor
+// Opens a new tab, loads TUI editor, posts back {name,dataUrl,sourceFileId}
+// ----------------------------------------------------
+function generateTuiEditorHTML({ imageUrl, fileName='image.png', sourceFileId='' } = {}) {
+  const escName = (fileName || 'image.png').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const escUrl = (imageUrl || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Edit: ${escName}</title>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.css"/>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.css"/>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column}
+header{padding:10px;border-bottom:1px solid #eee;background:#fafafa}
+#editor{flex:1;min-height:0}
+footer{padding:8px;border-top:1px solid #eee;background:#fbfbfd;display:flex;gap:8px;align-items:center;}
+</style>
+</head>
+<body>
+<header><strong>TOAST UI Image Editor</strong> — ${escName}</header>
+<div id="editor"></div>
+<footer>
+  <button id="closeBtn">Close</button>
+  <div style="flex:1"></div>
+  <button id="exportBtn">Export</button>
+</footer>
+
+<script src="https://uicdn.toast.com/tui-code-snippet/latest/tui-code-snippet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://uicdn.toast.com/tui-color-picker/latest/tui-color-picker.js"></script>
+<script src="https://uicdn.toast.com/tui-image-editor/latest/tui-image-editor.js"></script>
+<script>
+(function(){
+  const imageUrl = ${JSON.stringify(escUrl)};
+  const fileName = ${JSON.stringify(escName)};
+  const sourceFileId = ${JSON.stringify(sourceFileId || '')};
+
+  function suggestedName(original, mime){
+    const base=(original||'image'); const parts=base.split('.'); const ext=(parts.length>1?parts.pop():''); const stem=parts.join('.') || 'image';
+    let out='png'; if (mime) { if (mime.includes('jpeg')) out='jpg'; else if (mime.includes('webp')) out='webp'; else if (mime.includes('png')) out='png'; } else if (ext) out=ext;
+    return stem + '_edited.' + out;
+  }
+
+  function boot(){
+    const root = document.getElementById('editor');
+    const height = (window.innerHeight - 100) + 'px';
+    root.style.height = height;
+    const inst = new tui.ImageEditor(root, {
+      includeUI: {
+        loadImage: { path: imageUrl, name: fileName },
+        theme: {},
+        menu: ['shape','filter','text','mask','icon','draw','crop','flip','rotate'],
+        uiSize: { width: '100%', height },
+        menuBarPosition: 'bottom'
+      },
+      cssMaxWidth: 2000, cssMaxHeight: 2000, usageStatistics: false
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', ()=>window.close());
+    document.getElementById('exportBtn').addEventListener('click', async ()=>{
+      try{
+        const dataUrl = inst.toDataURL({ format:'png', quality:0.92 });
+        const mime = (dataUrl.split(';')[0]||'').replace('data:','');
+        const name = suggestedName(fileName, mime);
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({ type:'tui-result', payload:{ name, dataUrl, sourceFileId } }, '*');
+        } else {
+          const a=document.createElement('a'); a.href=dataUrl; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+        }
+      }catch(err){ alert('Export failed: '+(err?.message||err)); }
+    });
+  }
+  if (window.tui?.ImageEditor) boot(); else { window.addEventListener('load', boot); }
+})();
+</script>
+</body></html>`;
+  return html;
 }
 
 // ----------------------------------------------------
@@ -1019,7 +1668,7 @@ const exportsAll = {
   Card, Badge, Spinner, Accordion, AccordionItem, AccordionHeader, AccordionBody,
   loadAdminLTE5Deps, loadAdminLTEDeps,
   AdminLTEWrapper, AdminLTENavbar, AdminLTESidebar, AdminLTEContentWrapper, AdminLTEFooter,
-  AdminLTECard, AdminLTEGoldCard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable, // ADDED: AdminLTEGoldCard
+  AdminLTECard, AdminLTEInfoBox, AdminLTESmallBox, AdminLTECallout, AdminLTETable,
   buildAdminBreadcrumb, buildAdminMenu, initAdminLTEWidgets,
   // helpers
   buildListGroup, buildTable, buildAlert, buildForm, buildModal, createElement,
@@ -1027,12 +1676,12 @@ const exportsAll = {
   HtmlFlowUploader,
   // jqWidgets
   loadJqWidgetsDeps, ensureJqWidgetsLoaded, JqxWidget, JqxGrid, JqxChart, JqxDateTimeInput, JqxTabs, JqxTab, JqxTree, JqxComboBox,
-  // Tabulator, Dropzone, Pintura, TOAST UI
-  HtmlTabulator, HtmlDropzone, buildPinturaHtml, buildToastUIEditorHtml
+  // Tabs
+  NavTabs,
+  // Progress modal
+  ProgressModal, injectProgressModal,
+  // ★ TUI Editor
+  loadTuiImageEditorDeps, TuiImageEditor, TuiImageEditorCard, TUI_THEMES,
+  generateTuiEditorHTML
 };
-
-// Global export (assumed context for the original file)
-Object.assign(window, exportsAll);
-
-// Expose exportsAll for internal use
-window.HtmlJsExports = exportsAll;
+for (const k in exportsAll) if (Object.prototype.hasOwnProperty.call(exportsAll, k)) window[k] = exportsAll[k];
