@@ -16,11 +16,13 @@
   --grad-danger: linear-gradient(45deg, #dc3545 0%, #bd2130 100%);       /* Red */
   
   /* Light Gradient Backgrounds (Nice Light Colorful Gradient) */
-  --colorful-light-gradient: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+  --colorful-light-gradient: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%); /* Subtle Blue/White */
+  --light-primary-gradient: linear-gradient(45deg, #dceeff 0%, #ffffff 100%); /* Very Light Primary */
   
   /* Focus/Shadows */
   --input-focus-shadow: rgba(0, 123, 255, 0.25);
   --gold-shadow: rgba(255, 165, 0, 0.4);
+  --light-shadow: rgba(0, 123, 255, 0.15);
 }
 
 /* Base Body Style */
@@ -64,6 +66,7 @@ body {
 /* Standard Card/Box Styling (Nice Light Colorful Gradient Body) */
 .card,
 .box { 
+    /* Apply the light gradient to the card body */
     background: var(--colorful-light-gradient);
     border: 1px solid #e9ecef;
     border-radius: 10px;
@@ -99,6 +102,22 @@ body {
   transform: translateY(-2px);
 }
 
+/* New: Button with Nice Light Colorful Gradient (e.g., btn-light-gradient) */
+.btn-light-gradient {
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 8px var(--light-shadow) !important;
+}
+
+.btn-light-gradient:hover {
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  box-shadow: 0 6px 12px var(--light-shadow) !important;
+  transform: translateY(-1px);
+}
+
+
 /* Contextual Gradient Buttons */
 .btn-success { background: var(--grad-success) !important; border-color: #1e7e34 !important; }
 .btn-info    { background: var(--grad-info) !important; border-color: #117a8b !important; }
@@ -111,7 +130,10 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
     font-weight: 600;
     border-radius: 8px;
-    color: white !important; /* Ensure all gradient buttons have white text */
+    /* Only apply white color to dark gradient buttons */
+    &:not(.btn-light-gradient) {
+      color: white !important;
+    }
 }
 .btn-warning { color: #212529 !important; } /* Exception for warning text */
 
@@ -158,4 +180,46 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   padding: 15px;
   /* Add some default padding */
+}
+
+/* ------------------------------------------------------------------- */
+/* VI. PAGINATION STYLING WITH NICE LIGHT COLORFUL GRADIENT */
+/* ------------------------------------------------------------------- */
+
+.pagination .page-btn {
+  /* Use light gradient for default page buttons */
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px var(--light-shadow);
+}
+
+.pagination .page-btn:hover:not(:disabled) {
+  /* Darker on hover */
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  border-color: #99ccff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--light-shadow);
+}
+
+.pagination .page-btn.active {
+  /* Active button uses the main primary gradient for clear contrast */
+  background: var(--grad-primary) !important;
+  color: white !important;
+  border-color: #0056b3 !important;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+  transform: none; /* Reset transform for active state */
+}
+
+.pagination .page-btn:disabled {
+  /* Disabled state remains subtle */
+  background: #f8f9fa !important;
+  color: #adb5bd !important;
+  border-color: #dee2e6 !important;
+  cursor: not-allowed;
+  box-shadow: none;
 }
