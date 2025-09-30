@@ -223,3 +223,174 @@ body {
   cursor: not-allowed;
   box-shadow: none;
 }
+/* ------------------------------------------------------------------- */
+/* II. GRADIENT BUTTONS & UI (MAXIMUM SPECIFICITY RE-ENFORCEMENT) */
+/* ------------------------------------------------------------------- */
+
+/* Primary Button: BOLD GOLD GRADIENT BUTTON (Re-enforced) */
+.btn-primary {
+  background: var(--gold-gradient-button) !important;
+  border-color: #FF9A00 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 20px var(--gold-shadow) !important;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active { /* Ensure hover/focus is also strong */
+  background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
+  box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+/* Nice Light Colorful Gradient Button (Final Fix) */
+.btn-light-gradient {
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 8px var(--light-shadow) !important;
+}
+
+.btn-light-gradient:hover, .btn-light-gradient:focus, .btn-light-gradient:active {
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  box-shadow: 0 6px 12px var(--light-shadow) !important;
+  transform: translateY(-1px) !important;
+  color: #007bff !important; /* Re-apply text color */
+}
+
+/* ------------------------------------------------------------------- */
+/* IV. TEXT GRADIENT (FINAL FIX - MAXIMUM SPECIFICITY & FORCE OVERRIDE) */
+/* ------------------------------------------------------------------- */
+
+/* Targets the class and headings using multiple, highly specific selectors */
+[class*="text-gold-gradient"],
+.text-gold-gradient,
+h1.text-gold-gradient,
+h2.text-gold-gradient,
+h3.text-gold-gradient,
+h4.text-gold-gradient,
+h5.text-gold-gradient,
+h6.text-gold-gradient {
+    /* CRITICAL FIXES - Use !important on every line */
+    background: var(--gold-text-gradient) !important;
+    
+    /* Apply clip properties with all relevant vendor prefixes */
+    -webkit-background-clip: text !important;
+    -moz-background-clip: text !important;
+    background-clip: text !important;
+    
+    /* Make text transparent for the background to show through - ESSENTIAL FIX */
+    -webkit-text-fill-color: transparent !important;
+    -moz-text-fill-color: transparent !important;
+    text-fill-color: transparent !important;
+    
+    /* Fallback color for browsers that don't support text clipping */
+    color: #FF6F00 !important;
+    
+    /* Ensure it is inline-block to define boundaries for the background */
+    display: inline-block !important;
+    
+    /* Remove text decorations which can interfere */
+    -webkit-text-decoration: none !important;
+    text-decoration: none !important;
+
+    /* Optional: Add a subtle text shadow for better contrast */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ------------------------------------------------------------------- */
+/* V. PAGINATION STYLING WITH NICE LIGHT COLORFUL GRADIENT */
+/* ------------------------------------------------------------------- */
+
+.pagination .page-btn {
+  /* Use light gradient for default page buttons */
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px var(--light-shadow);
+}
+
+.pagination .page-btn:hover:not(:disabled) {
+  /* Darker on hover */
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  border-color: #99ccff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--light-shadow);
+}
+
+.pagination .page-btn.active {
+  /* Active button uses the main primary gradient for clear contrast */
+  background: var(--grad-primary) !important;
+  color: white !important;
+  border-color: #0056b3 !important;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+  transform: none; /* Reset transform for active state */
+}
+
+.pagination .page-btn:disabled {
+  /* Disabled state remains subtle */
+  background: #f8f9fa !important;
+  color: #adb5bd !important;
+  border-color: #dee2e6 !important;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------- */
+/* VI. FORM CONTROLS (COMBOBOX/INPUT) STYLING */
+/* ------------------------------------------------------------------- */
+
+/* Input/Combobox Base styling */
+.form-control, 
+.form-select, 
+input[type="text"], 
+input[type="search"], 
+select {
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Combobox (Select) Specific Styling */
+.form-select, 
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23007bff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 15px center !important;
+    background-size: 12px 12px !important;
+    padding-right: 35px !important;
+}
+
+/* Input/Combobox Focus: Nice Light Colorful Gradient Focus */
+.form-control:focus,
+.form-select:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+select:focus {
+  border-color: #007bff; /* Primary Blue border */
+  box-shadow: 0 0 0 0.25rem var(--input-focus-shadow); /* Soft Blue shadow from :root */
+  outline: none;
+  background-color: var(--light-primary-gradient); /* Very light gradient in the background on focus */
+}
+
+/* Disabled State */
+.form-control:disabled,
+.form-select:disabled,
+input:disabled,
+select:disabled {
+  background-color: #e9ecef;
+  opacity: 0.6;
+}
