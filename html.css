@@ -149,3 +149,13 @@ body {
   box-shadow: 0 0 0 0.25rem var(--input-focus-shadow);
   outline: none;
 }
+/* --- V. Nice Light Colorful Gradient for Plugin/Library Containers --- */
+
+.bg-nice-gradient {
+  /* A subtle, refreshing gradient (e.g., light blue/green) */
+  background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%) !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 15px;
+  /* Add some default padding */
+}
