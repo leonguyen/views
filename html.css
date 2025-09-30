@@ -245,13 +245,14 @@ body {
 }
 
 /* Nice Light Colorful Gradient Button (ULTIMATE FIX) */
+/* Targeting element names (button, a) combined with the class for maximum specificity */
 button.btn-light-gradient, a.btn-light-gradient, .btn-light-gradient {
   background: var(--light-primary-gradient) !important;
   border: 1px solid #cce5ff !important;
   color: #007bff !important; /* FORCED BLUE TEXT */
   font-weight: 600 !important;
   box-shadow: 0 4px 8px var(--light-shadow) !important;
-  padding: 8px 15px; /* Ensure padding is set */
+  padding: 8px 15px;
 }
 
 button.btn-light-gradient:hover, button.btn-light-gradient:focus, button.btn-light-gradient:active,
@@ -268,7 +269,8 @@ a.btn-light-gradient:hover, a.btn-light-gradient:focus, a.btn-light-gradient:act
 /* IV. TEXT GRADIENT (ULTIMATE AGGRESSIVE FIX) */
 /* ------------------------------------------------------------------- */
 
-/* Using 'body' to add a high level of context specificity to defeat overrides */
+/* Using 'body' and explicit element selectors to achieve maximum specificity, 
+   defeating any framework overrides on text color properties. */
 body [class*="text-gold-gradient"],
 body .text-gold-gradient,
 body h1.text-gold-gradient,
