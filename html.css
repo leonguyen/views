@@ -224,7 +224,7 @@ body {
   box-shadow: none;
 }
 /* ------------------------------------------------------------------- */
-/* II. GRADIENT BUTTONS & UI (MAXIMUM SPECIFICITY RE-ENFORCEMENT) */
+/* II. GRADIENT BUTTONS & UI (FINAL AGGRESSIVE FIXES) */
 /* ------------------------------------------------------------------- */
 
 /* Primary Button: BOLD GOLD GRADIENT BUTTON (Re-enforced) */
@@ -237,17 +237,18 @@ body {
   box-shadow: 0 8px 20px var(--gold-shadow) !important;
   transition: all 0.2s ease;
 }
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active { /* Ensure hover/focus is also strong */
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active { 
   background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
   box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
   transform: translateY(-2px);
+  color: white !important; /* Re-confirm text color */
 }
 
-/* Nice Light Colorful Gradient Button (Final Fix) */
+/* Nice Light Colorful Gradient Button (FINAL FIX) */
 .btn-light-gradient {
   background: var(--light-primary-gradient) !important;
   border: 1px solid #cce5ff !important;
-  color: #007bff !important;
+  color: #007bff !important; /* MUST be blue, not white */
   font-weight: 600 !important;
   box-shadow: 0 4px 8px var(--light-shadow) !important;
 }
@@ -256,11 +257,12 @@ body {
   background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
   box-shadow: 0 6px 12px var(--light-shadow) !important;
   transform: translateY(-1px) !important;
-  color: #007bff !important; /* Re-apply text color */
+  color: #007bff !important; /* IMPORTANT: Re-apply blue text color on hover/focus */
+  border-color: #99ccff !important;
 }
 
 /* ------------------------------------------------------------------- */
-/* IV. TEXT GRADIENT (FINAL FIX - MAXIMUM SPECIFICITY & FORCE OVERRIDE) */
+/* IV. TEXT GRADIENT (FINAL AGGRESSIVE FIX) */
 /* ------------------------------------------------------------------- */
 
 /* Targets the class and headings using multiple, highly specific selectors */
@@ -291,7 +293,8 @@ h6.text-gold-gradient {
     /* Ensure it is inline-block to define boundaries for the background */
     display: inline-block !important;
     
-    /* Remove text decorations which can interfere */
+    /* Ensure no conflicting properties like line-height or text-shadow interfere with rendering */
+    line-height: 1.2 !important; 
     -webkit-text-decoration: none !important;
     text-decoration: none !important;
 
