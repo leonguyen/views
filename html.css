@@ -241,14 +241,14 @@ body {
   background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
   box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
   transform: translateY(-2px);
-  color: white !important; /* Re-confirm text color */
+  color: white !important;
 }
 
-/* Nice Light Colorful Gradient Button (FINAL FIX) */
+/* Nice Light Colorful Gradient Button (ULTIMATE FIX) */
 .btn-light-gradient {
   background: var(--light-primary-gradient) !important;
   border: 1px solid #cce5ff !important;
-  color: #007bff !important; /* MUST be blue, not white */
+  color: #007bff !important; /* FORCED BLUE TEXT */
   font-weight: 600 !important;
   box-shadow: 0 4px 8px var(--light-shadow) !important;
 }
@@ -257,15 +257,15 @@ body {
   background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
   box-shadow: 0 6px 12px var(--light-shadow) !important;
   transform: translateY(-1px) !important;
-  color: #007bff !important; /* IMPORTANT: Re-apply blue text color on hover/focus */
+  color: #007bff !important; /* FORCED BLUE TEXT ON HOVER/FOCUS */
   border-color: #99ccff !important;
 }
 
 /* ------------------------------------------------------------------- */
-/* IV. TEXT GRADIENT (FINAL AGGRESSIVE FIX) */
+/* IV. TEXT GRADIENT (ULTIMATE AGGRESSIVE FIX) */
 /* ------------------------------------------------------------------- */
 
-/* Targets the class and headings using multiple, highly specific selectors */
+/* Targets the class and headings using multiple, highly specific selectors to defeat overrides */
 [class*="text-gold-gradient"],
 .text-gold-gradient,
 h1.text-gold-gradient,
@@ -282,7 +282,7 @@ h6.text-gold-gradient {
     -moz-background-clip: text !important;
     background-clip: text !important;
     
-    /* Make text transparent for the background to show through - ESSENTIAL FIX */
+    /* Make text transparent for the background to show through - THE CORE FIX */
     -webkit-text-fill-color: transparent !important;
     -moz-text-fill-color: transparent !important;
     text-fill-color: transparent !important;
@@ -293,7 +293,7 @@ h6.text-gold-gradient {
     /* Ensure it is inline-block to define boundaries for the background */
     display: inline-block !important;
     
-    /* Ensure no conflicting properties like line-height or text-shadow interfere with rendering */
+    /* Ensure no conflicting properties interfere */
     line-height: 1.2 !important; 
     -webkit-text-decoration: none !important;
     text-decoration: none !important;
