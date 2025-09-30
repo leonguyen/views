@@ -286,11 +286,45 @@ select:disabled {
   opacity: 0.6;
 }
 /* ------------------------------------------------------------------- */
+/* II. GRADIENT BUTTONS & UI (MAXIMUM SPECIFICITY RE-ENFORCEMENT) */
+/* ------------------------------------------------------------------- */
+
+/* Primary Button: BOLD GOLD GRADIENT BUTTON */
+.btn-primary {
+  background: var(--gold-gradient-button) !important;
+  border-color: #FF9A00 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 20px var(--gold-shadow) !important;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg, #FFD700 0%, #FF9000 100%) !important;
+  box-shadow: 0 10px 25px rgba(255, 165, 0, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+/* New: Button with Nice Light Colorful Gradient (e.g., btn-light-gradient) */
+.btn-light-gradient {
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 8px var(--light-shadow) !important;
+}
+
+.btn-light-gradient:hover {
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  box-shadow: 0 6px 12px var(--light-shadow) !important;
+  transform: translateY(-1px);
+}
+
+/* ------------------------------------------------------------------- */
 /* IV. TEXT GRADIENT (FINAL FIX - MAXIMUM SPECIFICITY & FORCE OVERRIDE) */
 /* ------------------------------------------------------------------- */
 
-/* The combination of the attribute selector, direct class selector, and specific
-   heading selectors ensures maximum specificity to override any conflicting rule. */
+/* Targets headings and the class with the highest possible specificity */
 [class*="text-gold-gradient"],
 .text-gold-gradient,
 h1[class*="text-gold-gradient"],
@@ -299,7 +333,7 @@ h3[class*="text-gold-gradient"],
 h4[class*="text-gold-gradient"],
 h5[class*="text-gold-gradient"],
 h6[class*="text-gold-gradient"] {
-    /* CRITICAL FIXES - Use !important on every line */
+    /* CRITICAL FIXES - Use !important on every necessary line */
     background: var(--gold-text-gradient) !important;
     
     /* Apply clip properties with all relevant vendor prefixes */
