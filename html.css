@@ -285,3 +285,124 @@ select:disabled {
   background-color: #e9ecef;
   opacity: 0.6;
 }
+/* ------------------------------------------------------------------- */
+/* IV. TEXT GRADIENT (FIXED IMPLEMENTATION) */
+/* ------------------------------------------------------------------- */
+
+/*
+ * NOTE: Ensure the variable --gold-text-gradient is defined in :root.
+ * :root { --gold-text-gradient: linear-gradient(45deg, #FFD700, #FF6F00); }
+ */
+.text-gold-gradient {
+    /* Set the background to the gradient variable */
+    background: var(--gold-text-gradient);
+    
+    /* Clip the background to the text itself (requires vendor prefixes) */
+    -webkit-background-clip: text;
+    background-clip: text;
+    
+    /* Make the text color transparent so the background shows through */
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+    
+    /* Optional: Add a subtle text shadow for better contrast */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    
+    /* Ensure it is inline or inline-block for gradient to apply correctly */
+    display: inline-block;
+}
+
+/* ------------------------------------------------------------------- */
+/* V. PAGINATION STYLING WITH NICE LIGHT COLORFUL GRADIENT */
+/* ------------------------------------------------------------------- */
+
+.pagination .page-btn {
+  /* Use light gradient for default page buttons */
+  background: var(--light-primary-gradient) !important;
+  border: 1px solid #cce5ff !important;
+  color: #007bff !important;
+  font-weight: 600;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px var(--light-shadow);
+}
+
+.pagination .page-btn:hover:not(:disabled) {
+  /* Darker on hover */
+  background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
+  border-color: #99ccff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px var(--light-shadow);
+}
+
+.pagination .page-btn.active {
+  /* Active button uses the main primary gradient for clear contrast */
+  background: var(--grad-primary) !important;
+  color: white !important;
+  border-color: #0056b3 !important;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+  transform: none; /* Reset transform for active state */
+}
+
+.pagination .page-btn:disabled {
+  /* Disabled state remains subtle */
+  background: #f8f9fa !important;
+  color: #adb5bd !important;
+  border-color: #dee2e6 !important;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------- */
+/* VI. FORM CONTROLS (COMBOBOX/INPUT) STYLING */
+/* ------------------------------------------------------------------- */
+
+/* Input/Combobox Base styling */
+.form-control, 
+.form-select, 
+input[type="text"], 
+input[type="search"], 
+select {
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Combobox (Select) Specific Styling */
+.form-select, 
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23007bff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 15px center !important;
+    background-size: 12px 12px !important;
+    padding-right: 35px !important;
+}
+
+/* Input/Combobox Focus: Nice Light Colorful Gradient Focus */
+.form-control:focus,
+.form-select:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+select:focus {
+  border-color: #007bff; /* Primary Blue border */
+  box-shadow: 0 0 0 0.25rem var(--input-focus-shadow); /* Soft Blue shadow from :root */
+  outline: none;
+  background-color: var(--light-primary-gradient); /* Very light gradient in the background on focus */
+}
+
+/* Disabled State */
+.form-control:disabled,
+.form-select:disabled,
+input:disabled,
+select:disabled {
+  background-color: #e9ecef;
+  opacity: 0.6;
+}
