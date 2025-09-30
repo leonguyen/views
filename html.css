@@ -5,6 +5,7 @@
 
 :root {
   /* Core Gold/Accent Gradients */
+  --gold-text-gradient: linear-gradient(90deg, #FFD700 0%, #FF8C00 100%); /* New: Gold Text Gradient */
   --gold-gradient-bg: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); /* Bold Gold Card Header */
   --gold-gradient-button: linear-gradient(90deg, #FFC720 0%, #FF9A00 100%); /* Bold Gold Primary Button */
   
