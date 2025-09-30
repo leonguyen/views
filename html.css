@@ -286,16 +286,18 @@ select:disabled {
   opacity: 0.6;
 }
 /* ------------------------------------------------------------------- */
-/* IV. TEXT GRADIENT (FIXED IMPLEMENTATION) - MAXIMUM SPECIFICITY */
+/* IV. TEXT GRADIENT (FINAL FIX - MAXIMUM SPECIFICITY & FORCE OVERRIDE) */
 /* ------------------------------------------------------------------- */
 
-.text-gold-gradient,
-h1.text-gold-gradient,
-h2.text-gold-gradient,
-h3.text-gold-gradient,
-h4.text-gold-gradient,
-h5.text-gold-gradient,
-h6.text-gold-gradient {
+/* Target the class and use the attribute selector to achieve highest specificity */
+[class*="text-gold-gradient"],
+h1[class*="text-gold-gradient"],
+h2[class*="text-gold-gradient"],
+h3[class*="text-gold-gradient"],
+h4[class*="text-gold-gradient"],
+h5[class*="text-gold-gradient"],
+h6[class*="text-gold-gradient"],
+.text-gold-gradient {
     /* CRITICAL FIX: Applying !important to all necessary properties for heading override */
     background: var(--gold-text-gradient) !important;
     
@@ -315,6 +317,10 @@ h6.text-gold-gradient {
     /* Ensure it is inline-block to define boundaries for the background */
     display: inline-block !important;
     
+    /* Ensure the background property is not overridden later */
+    -webkit-text-decoration: none !important;
+    text-decoration: none !important;
+
     /* Optional: Add a subtle text shadow for better contrast */
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
