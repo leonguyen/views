@@ -289,28 +289,30 @@ select:disabled {
 /* IV. TEXT GRADIENT (FIXED IMPLEMENTATION) */
 /* ------------------------------------------------------------------- */
 
-/*
- * NOTE: Ensure the variable --gold-text-gradient is defined in :root.
- * :root { --gold-text-gradient: linear-gradient(45deg, #FFD700, #FF6F00); }
- */
 .text-gold-gradient {
-    /* Set the background to the gradient variable */
-    background: var(--gold-text-gradient);
+    /* Critical Fixes for Gradient Text: Use !important to override potential conflicts */
+    background: var(--gold-text-gradient) !important;
     
-    /* Clip the background to the text itself (requires vendor prefixes) */
-    -webkit-background-clip: text;
-    background-clip: text;
+    /* Apply clip properties with vendor prefix for maximum compatibility */
+    -webkit-background-clip: text !important;
+    -moz-background-clip: text !important;
+    background-clip: text !important;
     
-    /* Make the text color transparent so the background shows through */
-    -webkit-text-fill-color: transparent;
-    text-fill-color: transparent;
+    /* Make text transparent for the background to show through */
+    -webkit-text-fill-color: transparent !important;
+    -moz-text-fill-color: transparent !important;
+    text-fill-color: transparent !important;
+    
+    /* Fallback color for browsers that don't support text clipping (they'll see the end color) */
+    color: #FF6F00 !important;
+    
+    /* Ensure it is inline-block to define boundaries for the background */
+    display: inline-block !important;
     
     /* Optional: Add a subtle text shadow for better contrast */
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    
-    /* Ensure it is inline or inline-block for gradient to apply correctly */
-    display: inline-block;
 }
+
 
 /* ------------------------------------------------------------------- */
 /* V. PAGINATION STYLING WITH NICE LIGHT COLORFUL GRADIENT */
