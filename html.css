@@ -289,16 +289,17 @@ select:disabled {
 /* IV. TEXT GRADIENT (FINAL FIX - MAXIMUM SPECIFICITY & FORCE OVERRIDE) */
 /* ------------------------------------------------------------------- */
 
-/* Target the class and use the attribute selector to achieve highest specificity */
+/* The combination of the attribute selector, direct class selector, and specific
+   heading selectors ensures maximum specificity to override any conflicting rule. */
 [class*="text-gold-gradient"],
+.text-gold-gradient,
 h1[class*="text-gold-gradient"],
 h2[class*="text-gold-gradient"],
 h3[class*="text-gold-gradient"],
 h4[class*="text-gold-gradient"],
 h5[class*="text-gold-gradient"],
-h6[class*="text-gold-gradient"],
-.text-gold-gradient {
-    /* CRITICAL FIX: Applying !important to all necessary properties for heading override */
+h6[class*="text-gold-gradient"] {
+    /* CRITICAL FIXES - Use !important on every line */
     background: var(--gold-text-gradient) !important;
     
     /* Apply clip properties with all relevant vendor prefixes */
@@ -317,7 +318,7 @@ h6[class*="text-gold-gradient"],
     /* Ensure it is inline-block to define boundaries for the background */
     display: inline-block !important;
     
-    /* Ensure the background property is not overridden later */
+    /* Remove text decorations which can interfere */
     -webkit-text-decoration: none !important;
     text-decoration: none !important;
 
