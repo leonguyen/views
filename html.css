@@ -245,14 +245,17 @@ body {
 }
 
 /* Nice Light Colorful Gradient Button (ULTIMATE FIX) */
-.btn-light-gradient {
+button.btn-light-gradient, a.btn-light-gradient, .btn-light-gradient {
   background: var(--light-primary-gradient) !important;
   border: 1px solid #cce5ff !important;
   color: #007bff !important; /* FORCED BLUE TEXT */
   font-weight: 600 !important;
   box-shadow: 0 4px 8px var(--light-shadow) !important;
+  padding: 8px 15px; /* Ensure padding is set */
 }
 
+button.btn-light-gradient:hover, button.btn-light-gradient:focus, button.btn-light-gradient:active,
+a.btn-light-gradient:hover, a.btn-light-gradient:focus, a.btn-light-gradient:active,
 .btn-light-gradient:hover, .btn-light-gradient:focus, .btn-light-gradient:active {
   background: linear-gradient(45deg, #e0f0ff 0%, #f0f7ff 100%) !important;
   box-shadow: 0 6px 12px var(--light-shadow) !important;
@@ -265,15 +268,15 @@ body {
 /* IV. TEXT GRADIENT (ULTIMATE AGGRESSIVE FIX) */
 /* ------------------------------------------------------------------- */
 
-/* Targets the class and headings using multiple, highly specific selectors to defeat overrides */
-[class*="text-gold-gradient"],
-.text-gold-gradient,
-h1.text-gold-gradient,
-h2.text-gold-gradient,
-h3.text-gold-gradient,
-h4.text-gold-gradient,
-h5.text-gold-gradient,
-h6.text-gold-gradient {
+/* Using 'body' to add a high level of context specificity to defeat overrides */
+body [class*="text-gold-gradient"],
+body .text-gold-gradient,
+body h1.text-gold-gradient,
+body h2.text-gold-gradient,
+body h3.text-gold-gradient,
+body h4.text-gold-gradient,
+body h5.text-gold-gradient,
+body h6.text-gold-gradient {
     /* CRITICAL FIXES - Use !important on every line */
     background: var(--gold-text-gradient) !important;
     
