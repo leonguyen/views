@@ -285,33 +285,34 @@ select:disabled {
   background-color: #e9ecef;
   opacity: 0.6;
 }
-/*
- * IMPORTANT: Ensure you have this variable defined in your :root block:
- * --gold-text-gradient: linear-gradient(45deg, #FFD700, #FF6F00);
- */
-
 /* ------------------------------------------------------------------- */
-/* IV. TEXT GRADIENT (FINAL ROBUST FIX) */
+/* IV. TEXT GRADIENT (FIXED IMPLEMENTATION) - MAXIMUM SPECIFICITY */
 /* ------------------------------------------------------------------- */
 
-.text-gold-gradient {
-    /* Step 1: Apply the gradient as the background, override any background color */
+.text-gold-gradient,
+h1.text-gold-gradient,
+h2.text-gold-gradient,
+h3.text-gold-gradient,
+h4.text-gold-gradient,
+h5.text-gold-gradient,
+h6.text-gold-gradient {
+    /* CRITICAL FIX: Applying !important to all necessary properties for heading override */
     background: var(--gold-text-gradient) !important;
     
-    /* Step 2: Clip the background to the text area (requires vendor prefixes) */
+    /* Apply clip properties with all relevant vendor prefixes */
     -webkit-background-clip: text !important;
-    -moz-background-clip: text !important; /* Added for maximum coverage */
+    -moz-background-clip: text !important;
     background-clip: text !important;
     
-    /* Step 3: Make the text color transparent so the clipped background shows through */
+    /* Make text transparent for the background to show through */
     -webkit-text-fill-color: transparent !important;
-    -moz-text-fill-color: transparent !important; /* Added for maximum coverage */
+    -moz-text-fill-color: transparent !important;
     text-fill-color: transparent !important;
     
     /* Fallback color for browsers that don't support text clipping */
     color: #FF6F00 !important;
     
-    /* Ensure the element is treated as a container for the gradient */
+    /* Ensure it is inline-block to define boundaries for the background */
     display: inline-block !important;
     
     /* Optional: Add a subtle text shadow for better contrast */
