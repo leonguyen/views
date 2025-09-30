@@ -285,28 +285,33 @@ select:disabled {
   background-color: #e9ecef;
   opacity: 0.6;
 }
+/*
+ * IMPORTANT: Ensure you have this variable defined in your :root block:
+ * --gold-text-gradient: linear-gradient(45deg, #FFD700, #FF6F00);
+ */
+
 /* ------------------------------------------------------------------- */
-/* IV. TEXT GRADIENT (FIXED IMPLEMENTATION) */
+/* IV. TEXT GRADIENT (FINAL ROBUST FIX) */
 /* ------------------------------------------------------------------- */
 
 .text-gold-gradient {
-    /* Critical Fixes for Gradient Text: Use !important to override potential conflicts */
+    /* Step 1: Apply the gradient as the background, override any background color */
     background: var(--gold-text-gradient) !important;
     
-    /* Apply clip properties with vendor prefix for maximum compatibility */
+    /* Step 2: Clip the background to the text area (requires vendor prefixes) */
     -webkit-background-clip: text !important;
-    -moz-background-clip: text !important;
+    -moz-background-clip: text !important; /* Added for maximum coverage */
     background-clip: text !important;
     
-    /* Make text transparent for the background to show through */
+    /* Step 3: Make the text color transparent so the clipped background shows through */
     -webkit-text-fill-color: transparent !important;
-    -moz-text-fill-color: transparent !important;
+    -moz-text-fill-color: transparent !important; /* Added for maximum coverage */
     text-fill-color: transparent !important;
     
-    /* Fallback color for browsers that don't support text clipping (they'll see the end color) */
+    /* Fallback color for browsers that don't support text clipping */
     color: #FF6F00 !important;
     
-    /* Ensure it is inline-block to define boundaries for the background */
+    /* Ensure the element is treated as a container for the gradient */
     display: inline-block !important;
     
     /* Optional: Add a subtle text shadow for better contrast */
